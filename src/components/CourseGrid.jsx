@@ -93,7 +93,7 @@ const CourseGrid = () => {
                     {course.skills?.map((skill, idx) => (
                       <span
                         key={idx}
-                        className="px-2.5 py-1 rounded-lg bg-slate-900/90 text-slate-300 text-[11px] font-mono border border-slate-800 font-medium"
+                        className="px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300 text-[11px] font-mono border border-slate-800 font-medium"
                       >
                         {skill}
                       </span>
@@ -116,7 +116,7 @@ const CourseGrid = () => {
 
                   <Link
                     to={firstLesson ? `/learn/${course.id}/${firstModule.id}/${firstLesson.id}` : `/course/${course.id}/overview`}
-                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-emerald-500 text-slate-200 hover:text-slate-950 text-xs font-bold font-mono transition border border-slate-700 hover:border-emerald-400 shadow-sm"
+                    className="penta-card-btn inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold font-mono shadow-sm"
                   >
                     <span>{isUnlocked ? 'Enter Lab' : 'Preview Phase'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
