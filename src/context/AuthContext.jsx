@@ -4,16 +4,43 @@ const AuthContext = createContext();
 
 export const ROLES = {
   STUDENT: 'STUDENT',
-  INSTRUCTOR: 'INSTRUCTOR',
   ADMIN: 'ADMIN',
 };
 
 export const AuthProvider = ({ children }) => {
+  // Registered student accounts stored in localStorage
+  const [registeredUsers, setRegisteredUsers] = useState(() => {
+    const saved = localStorage.getItem('penta_registered_students');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'usr_student_01',
+        name: 'Alex Mercer',
+        email: 'alex.mercer@pentabrid.io',
+        password: 'Password',
+        role: ROLES.STUDENT,
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+        unlockedModules: ['module-1'],
+        bypassedModules: [],
+        pendingModules: [],
+        completedQuizzes: []
+      }
+    ];
+  });
+
+  // Current session user
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('penta_user');
-    return saved ? JSON.parse(saved) : {
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    // Default initial student user session
+    return {
       id: 'usr_student_01',
-      name: 'Alex Mercer (Student)',
+      name: 'Alex Mercer',
       email: 'alex.mercer@pentabrid.io',
       role: ROLES.STUDENT,
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
@@ -36,7 +63,7 @@ export const AuthProvider = ({ children }) => {
     const saved = localStorage.getItem('penta_bkash_settings');
     return saved ? JSON.parse(saved) : {
       phoneNumber: '01712-345678',
-      accountType: 'Personal', // 'Personal' | 'Merchant'
+      accountType: 'Personal',
       defaultFeeBdt: '250',
       instructions: 'Send Money to the bKash number below with your email as Reference, then submit your Transaction ID (TrxID) for admin approval.'
     };
@@ -48,7 +75,7 @@ export const AuthProvider = ({ children }) => {
       {
         id: 'txn_init_01',
         studentEmail: 'alex.mercer@pentabrid.io',
-        studentName: 'Alex Mercer (Student)',
+        studentName: 'Alex Mercer',
         itemType: 'module',
         itemId: 'module-2',
         itemTitle: 'Phase 02: Kernel Tradecraft & EDR Hooks',
@@ -68,8 +95,16 @@ export const AuthProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    localStorage.setItem('penta_user', JSON.stringify(user));
+    if (user) {
+      localStorage.setItem('penta_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('penta_user');
+    }
   }, [user]);
+
+  useEffect(() => {
+    localStorage.setItem('penta_registered_students', JSON.stringify(registeredUsers));
+  }, [registeredUsers]);
 
   useEffect(() => {
     localStorage.setItem('penta_admin_creds', JSON.stringify(adminCredentials));
@@ -92,8 +127,9 @@ export const AuthProvider = ({ children }) => {
     if (user?.email && grantedAccessMap[user.email]) {
       const additionalUnlocked = grantedAccessMap[user.email];
       setUser(prev => {
-        const merged = Array.from(new Set([...prev.unlockedModules, ...additionalUnlocked]));
-        if (merged.length !== prev.unlockedModules.length) {
+        if (!prev) return prev;
+        const merged = Array.from(new Set([...(prev.unlockedModules || []), ...additionalUnlocked]));
+        if (merged.length !== (prev.unlockedModules || []).length) {
           return {
             ...prev,
             unlockedModules: merged,
@@ -104,6 +140,95 @@ export const AuthProvider = ({ children }) => {
       });
     }
   }, [user?.email, grantedAccessMap]);
+
+  // Real Production Login
+  const login = (email, password) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    // Check Admin Login
+    if (cleanEmail === adminCredentials.email.toLowerCase() && cleanPassword === adminCredentials.password) {
+      const adminUser = {
+        id: 'usr_admin_01',
+        name: 'Root Administrator',
+        email: adminCredentials.email,
+        role: ROLES.ADMIN,
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+        unlockedModules: [],
+        bypassedModules: [],
+        pendingModules: [],
+        completedQuizzes: []
+      };
+      setUser(adminUser);
+      return { success: true, role: ROLES.ADMIN, user: adminUser };
+    }
+
+    // Check Student Accounts
+    const student = registeredUsers.find(
+      u => u.email.toLowerCase() === cleanEmail && u.password === cleanPassword
+    );
+
+    if (student) {
+      const granted = grantedAccessMap[student.email] || [];
+      const sessionUser = {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        role: ROLES.STUDENT,
+        avatar: student.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+        unlockedModules: Array.from(new Set([...(student.unlockedModules || ['module-1']), ...granted])),
+        bypassedModules: student.bypassedModules || [],
+        pendingModules: student.pendingModules || [],
+        completedQuizzes: student.completedQuizzes || []
+      };
+      setUser(sessionUser);
+      return { success: true, role: ROLES.STUDENT, user: sessionUser };
+    }
+
+    return { success: false, message: 'Invalid email or password.' };
+  };
+
+  // Real Production Registration
+  const register = (name, email, password) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+
+    if (cleanEmail === adminCredentials.email.toLowerCase()) {
+      return { success: false, message: 'This email is reserved for system administration.' };
+    }
+
+    const existing = registeredUsers.find(u => u.email.toLowerCase() === cleanEmail);
+    if (existing) {
+      return { success: false, message: 'An account with this email already exists. Please sign in.' };
+    }
+
+    const newStudent = {
+      id: `usr_${Date.now()}`,
+      name: cleanName,
+      email: cleanEmail,
+      password: password.trim(),
+      role: ROLES.STUDENT,
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+      unlockedModules: ['module-1'],
+      bypassedModules: [],
+      pendingModules: [],
+      completedQuizzes: []
+    };
+
+    setRegisteredUsers(prev => [...prev, newStudent]);
+    setUser(newStudent);
+    return { success: true, user: newStudent };
+  };
+
+  // Logout
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('penta_user');
+  };
+
+  const updateAdminCredentials = (newEmail, newPassword) => {
+    setAdminCredentials({ email: newEmail, password: newPassword });
+  };
 
   const updateBkashSettings = (newSettings) => {
     setBkashSettings(prev => ({ ...prev, ...newSettings }));
@@ -128,7 +253,7 @@ export const AuthProvider = ({ children }) => {
     setTransactions(prev => [newTxn, ...prev]);
 
     // Tag the module as pending review for this student
-    if (itemId) {
+    if (itemId && user) {
       const itemsToAdd = Array.isArray(itemId) ? itemId : [itemId];
       setUser(prev => ({
         ...prev,
@@ -153,7 +278,7 @@ export const AuthProvider = ({ children }) => {
     // Update transaction status
     setTransactions(prev => prev.map(t => t.id === txnId ? { ...t, status: 'APPROVED' } : t));
 
-    // Save into granted access map for that student
+    // Save into persistent granted access map for that student
     setGrantedAccessMap(prev => {
       const existing = prev[targetTxn.studentEmail] || [];
       return {
@@ -166,8 +291,8 @@ export const AuthProvider = ({ children }) => {
     if (user?.email === targetTxn.studentEmail) {
       setUser(prev => ({
         ...prev,
-        unlockedModules: Array.from(new Set([...prev.unlockedModules, ...itemsToUnlock])),
-        bypassedModules: Array.from(new Set([...prev.bypassedModules, ...itemsToUnlock])),
+        unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), ...itemsToUnlock])),
+        bypassedModules: Array.from(new Set([...(prev.bypassedModules || []), ...itemsToUnlock])),
         pendingModules: (prev.pendingModules || []).filter(id => !itemsToUnlock.includes(id))
       }));
     }
@@ -208,7 +333,7 @@ export const AuthProvider = ({ children }) => {
     if (user?.email === studentEmail) {
       setUser(prev => ({
         ...prev,
-        unlockedModules: Array.from(new Set([...prev.unlockedModules, ...itemsToUnlock])),
+        unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), ...itemsToUnlock])),
         pendingModules: (prev.pendingModules || []).filter(id => !itemsToUnlock.includes(id))
       }));
     }
@@ -220,77 +345,41 @@ export const AuthProvider = ({ children }) => {
     setTransactions(prev => prev.filter(t => t.id !== txnId));
   };
 
-  const login = (email, password) => {
-    if (email === adminCredentials.email && password === adminCredentials.password) {
-      setUser({
-        id: 'usr_admin_01',
-        name: 'Root Administrator',
-        email: email,
-        role: ROLES.ADMIN,
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-        unlockedModules: [],
-        bypassedModules: [],
-        pendingModules: [],
-        completedQuizzes: []
-      });
-      return true;
-    }
-    return false;
-  };
-
-  const updateAdminCredentials = (newEmail, newPassword) => {
-    setAdminCredentials({ email: newEmail, password: newPassword });
-  };
-
-  const switchRole = (newRole) => {
-    let name = 'Alex Mercer (Student)';
-    let id = 'usr_student_01';
-    if (newRole === ROLES.INSTRUCTOR) {
-      name = 'Dr. Sarah Lin (Instructor)';
-      id = 'usr_instructor_01';
-    } else if (newRole === ROLES.ADMIN) {
-      name = 'Root Administrator (Admin)';
-      id = 'usr_admin_01';
-    }
-
-    setUser(prev => ({
-      ...prev,
-      id,
-      name,
-      role: newRole
-    }));
-  };
-
   const unlockNextModule = (moduleId) => {
+    if (!user) return;
     setUser(prev => ({
       ...prev,
-      unlockedModules: Array.from(new Set([...prev.unlockedModules, moduleId])),
+      unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), moduleId])),
       pendingModules: (prev.pendingModules || []).filter(id => id !== moduleId)
     }));
   };
 
   const bypassModuleWithPayment = (moduleId) => {
+    if (!user) return;
     setUser(prev => ({
       ...prev,
-      unlockedModules: Array.from(new Set([...prev.unlockedModules, moduleId])),
-      bypassedModules: Array.from(new Set([...prev.bypassedModules, moduleId])),
+      unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), moduleId])),
+      bypassedModules: Array.from(new Set([...(prev.bypassedModules || []), moduleId])),
       pendingModules: (prev.pendingModules || []).filter(id => id !== moduleId)
     }));
   };
 
   const recordQuizSuccess = (quizId, moduleId) => {
+    if (!user) return;
     setUser(prev => ({
       ...prev,
-      completedQuizzes: Array.from(new Set([...prev.completedQuizzes, quizId])),
-      unlockedModules: Array.from(new Set([...prev.unlockedModules, moduleId]))
+      completedQuizzes: Array.from(new Set([...(prev.completedQuizzes || []), quizId])),
+      unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), moduleId]))
     }));
   };
 
   return (
     <AuthContext.Provider value={{
       user,
-      switchRole,
       login,
+      register,
+      logout,
+      isAuthenticated: Boolean(user),
       updateAdminCredentials,
       adminEmail: adminCredentials.email,
       bkashSettings,
@@ -304,9 +393,8 @@ export const AuthProvider = ({ children }) => {
       unlockNextModule,
       bypassModuleWithPayment,
       recordQuizSuccess,
-      isAdmin: user.role === ROLES.ADMIN,
-      isInstructor: user.role === ROLES.INSTRUCTOR,
-      isStaff: user.role === ROLES.ADMIN || user.role === ROLES.INSTRUCTOR
+      isAdmin: user?.role === ROLES.ADMIN,
+      isStudent: user?.role === ROLES.STUDENT,
     }}>
       {children}
     </AuthContext.Provider>
