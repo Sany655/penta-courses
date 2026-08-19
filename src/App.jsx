@@ -4,7 +4,7 @@ import Home from './pages/Home';
 import Auth from './pages/Auth';
 import CourseOverview from './pages/CourseOverview';
 import LearningWorkspace from './components/student/LearningWorkspace';
-import LessonBuilder from './components/admin/LessonBuilder';
+import AdminDashboard from './pages/AdminDashboard';
 import { AuthProvider, useAuth, ROLES } from './context/AuthContext';
 import { Terminal, Shield, Sparkles, User, ChevronDown } from 'lucide-react';
 import './App.css';
@@ -36,7 +36,7 @@ function NavigationBar() {
       {/* Navigation Links */}
       <div className="hidden md:flex items-center space-x-8 text-xs font-mono text-slate-400">
         <a href="/#courses" className="hover:text-white transition">Curriculum Tracks</a>
-        <Link to="/admin/builder" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+        <Link to="/admin" className="hover:text-cyan-400 transition flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
           <span>AI Admin Studio</span>
         </Link>
@@ -81,7 +81,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/course/:courseId/overview" element={<CourseOverview />} />
               <Route path="/learn/:courseId/:moduleId/:lessonId" element={<LearningWorkspace />} />
-              <Route path="/admin/builder" element={<LessonBuilder />} />
+              <Route path="/admin/*" element={<AdminDashboard />} />
             </Routes>
           </div>
           <footer className="py-8 bg-[#030508] border-t border-slate-900 text-center text-xs font-mono text-slate-500">

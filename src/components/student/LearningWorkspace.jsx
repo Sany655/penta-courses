@@ -222,6 +222,7 @@ export default function LearningWorkspace() {
                 <QuizGatekeeper 
                   quiz={module.quiz}
                   moduleTitle={module.title}
+                  moduleId={nextModule ? nextModule.id : module.id}
                   onQuizPass={handleQuizPassed}
                   onBypassPay={handleBypassPaid}
                 />

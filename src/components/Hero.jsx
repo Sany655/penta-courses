@@ -11,12 +11,18 @@ const Hero = () => {
   const [terminalText, setTerminalText] = useState('');
   const [commandIndex, setCommandIndex] = useState(0);
 
-  const commandList = [
-    'npx penta-core --track=cybersecurity --mode=kernel-hook',
-    'python3 train_clinical_xgboost.py --cohort=icu_v2 --explain=tree-shap',
-    'clang -O2 -target bpf -c xdp_ddos_drop.c -o xdp_filter.o',
-    'docker compose -f distributed-redlock.yml up -d --scale worker=12'
-  ];
+  const isHidden = localStorage.getItem('penta_hero_hidden') === 'true';
+  const storedTitle = localStorage.getItem('penta_hero_title');
+  const renderTitle = storedTitle || 'Mission-Critical <br /> <span class="text-gradient-emerald">Offensive Cyber</span> & <br /> <span class="text-gradient-cyan">Distributed Architecture</span>';
+  
+  const storedCmds = localStorage.getItem('penta_hero_cmds');
+  const commandList = storedCmds 
+    ? storedCmds.split(',').map(c => c.trim())
+    : [
+        'penta-core --track=cybersecurity',
+        'python3 train_model.py --explain=tree-shap',
+        'clang -O2 -target bpf -c filter.c -o filter.o'
+      ];
 
   useEffect(() => {
     let charIndex = 0;
@@ -38,6 +44,8 @@ const Hero = () => {
     return () => clearInterval(typingInterval);
   }, [commandIndex]);
 
+  if (isHidden) return null;
+
   return (
     <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 overflow-hidden bg-[#05070a] border-b border-slate-900">
       {/* Background Neon Grid Matrix */}
@@ -54,11 +62,10 @@ const Hero = () => {
               <span>PENTABRID ENGINE v3.4 — DISTRIBUTED LEARNING FOR ELITE DEVS</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.1]">
-              Mission-Critical <br />
-              <span className="text-gradient-emerald">Offensive Cyber</span> & <br />
-              <span className="text-gradient-cyan">Distributed Architecture</span>
-            </h1>
+            <h1 
+              className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.1]"
+              dangerouslySetInnerHTML={{ __html: renderTitle }}
+            />
 
             {/* Dynamic CLI Subheadline */}
             <div className="bg-[#090d16] border border-slate-800 rounded-xl p-3.5 font-mono text-xs md:text-sm text-slate-300 flex items-center space-x-3 shadow-xl">
@@ -86,7 +93,7 @@ const Hero = () => {
               </a>
 
               <button
-                onClick={() => navigate('/admin/builder')}
+                onClick={() => navigate('/admin')}
                 className="px-6 py-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-sm transition flex items-center gap-2"
               >
                 <Sparkles className="w-4 h-4 text-cyan-400" />
@@ -117,31 +124,31 @@ const Hero = () => {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <span className="font-mono text-xs font-bold text-slate-200">NODE STATUS: ACTIVE</span>
+                  <span className="font-mono text-xs font-bold text-slate-200">PLATFORM NODE: ACTIVE</span>
                 </div>
                 <span className="font-mono text-[11px] text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800">
-                  SANDBOX v3
+                  SECURE ENVIRONMENT
                 </span>
               </div>
 
               {/* Mini Interactive Preview Graphic */}
               <div className="space-y-2 font-mono text-xs">
                 <div className="p-3 bg-slate-950/80 rounded-lg border border-slate-800/80 text-slate-300 space-y-1">
-                  <div className="text-slate-500 text-[10px] uppercase">Active Kernel Filter</div>
-                  <div className="text-emerald-400 font-bold">XDP_PASS / XDP_DROP (14.82 Mpps)</div>
+                  <div className="text-slate-500 text-[10px] uppercase">Active Filter Module</div>
+                  <div className="text-emerald-400 font-bold">PACKET FILTERING (ACTIVE)</div>
                 </div>
                 <div className="p-3 bg-slate-950/80 rounded-lg border border-slate-800/80 text-slate-300 space-y-1">
-                  <div className="text-slate-500 text-[10px] uppercase">Telemetry Sensor</div>
-                  <div className="text-cyan-400 font-bold">ETW-Ti Process Hook: INJECTED</div>
+                  <div className="text-slate-500 text-[10px] uppercase">Telemetry Interface</div>
+                  <div className="text-cyan-400 font-bold">SENSOR CONNECTION: ESTABLISHED</div>
                 </div>
                 <div className="p-3 bg-slate-950/80 rounded-lg border border-slate-800/80 text-slate-300 space-y-1">
-                  <div className="text-slate-500 text-[10px] uppercase">Model Feature Importance</div>
-                  <div className="text-amber-400 font-bold">SHAP TreeExplainer: 0.9412 ROC-AUC</div>
+                  <div className="text-slate-500 text-[10px] uppercase">Model Feature Analysis</div>
+                  <div className="text-amber-400 font-bold">EXPLAINER MODULE: OPTIMIZED</div>
                 </div>
               </div>
 
               <div className="pt-2 flex items-center justify-between text-xs text-slate-400 font-mono">
-                <span>Gatekeeper Security: Strict</span>
+                <span>Access Control: Strict</span>
                 <span className="text-emerald-400">Sequential Lock Enabled</span>
               </div>
             </div>

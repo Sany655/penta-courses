@@ -41,6 +41,7 @@ Designed both as a **stand-alone learning destination** and a **white-label Mark
 ### 1. 🚀 High-Converting Marketing & Landing Engine
 * **Aesthetic**: Modern obsidian dark mode (`#05070a`), neon emerald spotlights, ambient matrix grids, and sub-second fluid transitions.
 * **Hero Experience**: Real-time terminal typing subheadline cycling live CLI commands across all technical tracks.
+* **Dynamic Content Control**: Real-time toggling and updating of hero headlines and technical commands directly via the Admin Studio.
 * **Curriculum Catalog**: Dynamic track badges showing difficulty indices, estimated hours, lock/unlock states, and prerequisite dependency graphs.
 * **Practitioner Social Proof**: Real-world validation from Senior Security Engineers, Staff ML Architects, and Infrastructure Leads.
 * **Interactive Skills Telemetry**: Live graphical capability bars mapping verified mastery percentages.
@@ -66,11 +67,15 @@ Designed both as a **stand-alone learning destination** and a **white-label Mark
   * `<NetworkFlow/>`: Animated SVG/node data-flow simulator demonstrating packet movement between kernel and userland layers.
 * **Gamified Gatekeeper Progression**:
   * Lessons remain locked until the module's `<QuizGatekeeper/>` assessment is passed with at least an **80% score**.
-  * **Stripe Instant Bypass Microtransaction**: Integrated modal allowing students to pay a **$2.99 fee** to bypass tests and instantly unlock advanced phases.
+  * **bKash Instant Bypass & Enrollment Gateway**: Integrated modal with custom merchant/personal bKash phone numbers, reference tagging, and instant TrxID submission for manual/instant authorization.
 
 ---
 
-### 4. 🤖 AI-Powered Admin CMS & Staging Canvas
+### 4. 🤖 AI-Powered Admin Studio & Control Node
+* **Centralized Dashboard**: A unified sidebar interface for managing the Lesson Builder, dynamic Site Settings (marketing copy), bKash Payment Gateway configuration, and Security & Auth credentials.
+* **bKash Gateway & Transaction Ledger**: 
+  * Live editable bKash phone number, account type (Personal/Merchant), default bypass fee (BDT), and student instructions.
+  * Real-time audit ledger logging all submitted TrxIDs, student emails, timestamps, and authorized access.
 * **Notion-Style Block Editor**: Stackable, reorderable visual block authoring for Markdown, Terminal CLI, Code Stepper, and Network Diagrams.
 * **Human-in-the-Loop Gemini LLM Synthesizer**:
   * Integrated prompt modal connected to Google's Gemini 2.5 API.
@@ -104,7 +109,7 @@ datasource db {
 // - Course, Module, Lesson (stores typed JSON block payload)
 // - Quiz (passing thresholds & explanations)
 // - UserProgress (sequential unlocking & completion records)
-// - Transaction (Stripe microtransactions for test bypasses)
+// - Transaction (bKash & Stripe microtransactions for test bypasses)
 ```
 
 ---
@@ -116,7 +121,7 @@ datasource db {
 * **Database & ORM**: MySQL with Prisma ORM.
 * **Authentication**: NextAuth / Auth.js with RBAC edge middleware.
 * **AI Engine**: Google Gen AI SDK (`@google/genai` / Gemini 2.5 Flash).
-* **Payment Gateway**: Stripe API (Checkout Sessions & Webhook Handlers).
+* **Payment Gateway**: bKash Instant Gateway with TrxID Ledger & Stripe Checkout.
 
 ---
 
@@ -149,7 +154,12 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 npm run dev
 ```
 
-### 5. Build for production
+### 5. Access the Admin Studio
+Navigate to `http://localhost:5173/auth` and log in with the default root credentials:
+- **Email**: `admin@pentabrid.com`
+- **Password**: `Password`
+
+### 6. Build for production
 ```bash
 npm run build
 ```

@@ -1,18 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, User, Shield, Terminal, ArrowRight } from 'lucide-react';
+import { Lock, Mail, User, Shield, Terminal, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth, ROLES } from '../context/AuthContext';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [selectedRole, setSelectedRole] = useState(ROLES.STUDENT);
+  const [email, setEmail] = useState('alex.mercer@pentabrid.io');
+  const [password, setPassword] = useState('Password');
+  const [error, setError] = useState('');
+  
   const navigate = useNavigate();
-  const { switchRole } = useAuth();
+  const { switchRole, login, adminEmail } = useAuth();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    switchRole(selectedRole);
-    navigate('/');
+    setError('');
+    
+    if (email === adminEmail) {
+      const success = login(email, password);
+      if (success) {
+        navigate('/admin/builder');
+      } else {
+        setError('Invalid admin credentials.');
+      }
+    } else {
+      switchRole(ROLES.STUDENT);
+      navigate('/');
+    }
   };
 
   return (
@@ -33,64 +47,57 @@ const Auth = () => {
         <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
           {!isLogin && (
             <div className="space-y-1">
-              <label className="text-slate-400 text-[11px]">Full Name</label>
+              <label className="text-slate-400 text-sm">Full Name</label>
               <div className="relative">
                 <User size={16} className="absolute left-3.5 top-3 text-slate-500" />
                 <input
                   type="text"
                   placeholder="Alex Mercer"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#05070a] border border-slate-800 rounded-xl text-slate-200 focus:border-emerald-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-3 bg-[#05070a] border border-slate-800 rounded-xl text-slate-200 focus:border-emerald-500 focus:outline-none text-sm"
                 />
               </div>
             </div>
           )}
 
           <div className="space-y-1">
-            <label className="text-slate-400 text-[11px]">Email Address</label>
+            <label className="text-slate-400 text-sm">Email Address</label>
             <div className="relative">
-              <Mail size={16} className="absolute left-3.5 top-3 text-slate-500" />
+              <Mail size={16} className="absolute left-3.5 top-3.5 text-slate-500" />
               <input
                 type="email"
-                defaultValue="alex.mercer@pentabrid.io"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full pl-10 pr-4 py-2.5 bg-[#05070a] border border-slate-800 rounded-xl text-slate-200 focus:border-emerald-500 focus:outline-none"
+                className="w-full pl-10 pr-4 py-3 bg-[#05070a] border border-slate-800 rounded-xl text-slate-200 focus:border-emerald-500 focus:outline-none text-sm"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-slate-400 text-[11px]">Password Hash</label>
+            <label className="text-slate-400 text-sm">Password Hash</label>
             <div className="relative">
-              <Lock size={16} className="absolute left-3.5 top-3 text-slate-500" />
+              <Lock size={16} className="absolute left-3.5 top-3.5 text-slate-500" />
               <input
                 type="password"
-                defaultValue="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-10 pr-4 py-2.5 bg-[#05070a] border border-slate-800 rounded-xl text-slate-200 focus:border-emerald-500 focus:outline-none"
+                className="w-full pl-10 pr-4 py-3 bg-[#05070a] border border-slate-800 rounded-xl text-slate-200 focus:border-emerald-500 focus:outline-none text-sm"
               />
             </div>
           </div>
-
-          <div className="space-y-1 pt-1">
-            <label className="text-slate-400 text-[11px] flex items-center justify-between">
-              <span>RBAC Role Permission</span>
-              <span className="text-cyan-400">NextAuth Engine</span>
-            </label>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full p-2.5 bg-[#05070a] border border-slate-800 rounded-xl text-emerald-400 font-bold focus:border-emerald-500 focus:outline-none"
-            >
-              <option value={ROLES.STUDENT}>STUDENT (Workspace & Progression)</option>
-              <option value={ROLES.INSTRUCTOR}>INSTRUCTOR (Course Authoring)</option>
-              <option value={ROLES.ADMIN}>ADMIN (Full CMS Studio & System Config)</option>
-            </select>
-          </div>
+          
+          {error && (
+            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm p-3 rounded-lg flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              <span>{error}</span>
+            </div>
+          )}
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 mt-4"
+            className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 mt-4"
           >
             <span>{isLogin ? 'Authenticate & Enter' : 'Register Profile'}</span>
             <ArrowRight className="w-4 h-4" />
@@ -99,8 +106,9 @@ const Auth = () => {
 
         <div className="text-center pt-2 border-t border-slate-800/80">
           <button
+            type="button"
             onClick={() => setIsLogin(!isLogin)}
-            className="text-xs font-mono text-slate-400 hover:text-emerald-400 transition"
+            className="text-sm font-mono text-slate-400 hover:text-emerald-400 transition"
           >
             {isLogin ? "Need a new account? Register here" : "Have existing credentials? Sign in"}
           </button>

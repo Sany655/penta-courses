@@ -85,3 +85,18 @@ code, pre, .font-mono {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
+
+/* Accessibility: Base Font Minimums overrides */
+.text-xs {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.text-\[10px\], .text-\[11px\] {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+.text-sm {
+  font-size: 14px !important;
+}

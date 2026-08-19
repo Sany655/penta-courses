@@ -6,6 +6,7 @@ import {
   Lock, CreditCard, ArrowRight, Zap 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { BkashPaymentModal } from '../payment/BkashPaymentModal';
 
 // --- Markdown Theory Block ---
 export const MarkdownBlock = ({ content }) => {
@@ -34,7 +35,7 @@ export const MarkdownBlock = ({ content }) => {
 };
 
 // --- Animated Terminal Block ---
-export const AnimatedTerminal = ({ command, expectedOutput, typingSpeedMs = 35, promptUser = "operator", hostname = "penta-kali" }) => {
+export const AnimatedTerminal = ({ command, expectedOutput, typingSpeedMs = 35, promptUser = "operator", hostname = "lab-env" }) => {
   const [displayedCommand, setDisplayedCommand] = useState('');
   const [isExecuting, setIsExecuting] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
@@ -317,12 +318,11 @@ export const NetworkFlow = ({ nodes = [], animationFlow = [] }) => {
 };
 
 // --- The Gatekeeper Quiz Block & Microtransaction Bypass ---
-export const QuizGatekeeper = ({ quiz, onQuizPass, onBypassPay, moduleTitle = "Module" }) => {
+export const QuizGatekeeper = ({ quiz, onQuizPass, onBypassPay, moduleTitle = "Module", moduleId = null }) => {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
-  const [showStripeModal, setShowStripeModal] = useState(false);
-  const [isProcessingPay, setIsProcessingPay] = useState(false);
+  const [showBkashModal, setShowBkashModal] = useState(false);
 
   const handleSelectOption = (questionId, optionIndex) => {
     if (isSubmitted) return;
@@ -353,18 +353,9 @@ export const QuizGatekeeper = ({ quiz, onQuizPass, onBypassPay, moduleTitle = "M
     }
   };
 
-  const handleSimulatedPayment = () => {
-    setIsProcessingPay(true);
-    setTimeout(() => {
-      setIsProcessingPay(false);
-      setShowStripeModal(false);
-      confetti({
-        particleCount: 100,
-        spread: 80,
-        origin: { y: 0.6 }
-      });
-      if (onBypassPay) onBypassPay();
-    }, 1200);
+  const handleBkashSuccess = (result) => {
+    setShowBkashModal(false);
+    if (onBypassPay) onBypassPay(result);
   };
 
   const passed = isSubmitted && score >= quiz.passingScore;
@@ -386,13 +377,15 @@ export const QuizGatekeeper = ({ quiz, onQuizPass, onBypassPay, moduleTitle = "M
           </p>
         </div>
 
-        {/* Microtransaction Skip Hook */}
+        {/* bKash Payment Hook */}
         <button
-          onClick={() => setShowStripeModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold transition group shadow-[0_0_15px_rgba(245,158,11,0.15)]"
+          onClick={() => setShowBkashModal(true)}
+          className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#e2136e]/20 via-pink-500/20 to-orange-500/20 hover:from-[#e2136e]/30 hover:to-orange-500/30 border border-pink-500/40 text-pink-300 text-xs font-semibold transition group shadow-[0_0_15px_rgba(226,19,110,0.15)]"
         >
-          <Zap className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-          <span>Pay $2.99 to Instant Bypass</span>
+          <div className="w-4 h-4 rounded-full bg-[#e2136e] text-white flex items-center justify-center text-[10px] font-bold">
+            ৳
+          </div>
+          <span>Pay with bKash (Instant Bypass)</span>
         </button>
       </div>
 
@@ -472,74 +465,15 @@ export const QuizGatekeeper = ({ quiz, onQuizPass, onBypassPay, moduleTitle = "M
         )}
       </div>
 
-      {/* Stripe Microtransaction Modal */}
-      <AnimatePresence>
-        {showStripeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#0b0e14] border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center space-x-2">
-                  <CreditCard className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-base font-bold text-white">Stripe Micro-Checkout</h3>
-                </div>
-                <button
-                  onClick={() => setShowStripeModal(false)}
-                  className="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-900 rounded"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              <div className="space-y-3 text-xs text-slate-300">
-                <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 flex justify-between items-center">
-                  <div>
-                    <div className="font-semibold text-slate-100">Gatekeeper Instant Bypass</div>
-                    <div className="text-slate-400 text-[11px]">{moduleTitle}</div>
-                  </div>
-                  <div className="text-base font-bold text-emerald-400">$2.99 USD</div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-mono text-slate-400">Cardholder Token (Mock)</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value="•••• •••• •••• 4242 (Stripe Test Key)"
-                    className="w-full p-2.5 bg-[#07090e] border border-slate-800 rounded text-slate-300 font-mono"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={handleSimulatedPayment}
-                disabled={isProcessingPay}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-sm transition shadow-[0_0_20px_rgba(245,158,11,0.3)] flex items-center justify-center gap-2"
-              >
-                {isProcessingPay ? (
-                  <>
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1 }}
-                      className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full"
-                    />
-                    <span>Verifying with Stripe Webhook...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" />
-                    <span>Authorize $2.99 & Instant Unlock</span>
-                  </>
-                )}
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* bKash Payment Popup Modal */}
+      <BkashPaymentModal
+        isOpen={showBkashModal}
+        onClose={() => setShowBkashModal(false)}
+        itemTitle={`Gatekeeper Instant Bypass: ${moduleTitle}`}
+        itemId={moduleId}
+        itemType="module"
+        onSuccess={handleBkashSuccess}
+      />
     </div>
   );
 };
