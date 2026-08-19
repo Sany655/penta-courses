@@ -36,8 +36,9 @@ const CourseGrid = () => {
             </p>
           </div>
 
-          <div className="font-mono text-xs text-slate-400 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl self-start md:self-auto">
-            Session Role: <span className="text-emerald-400 font-bold">{user.role}</span>
+          <div className="font-mono text-xs text-slate-400 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl self-start md:self-auto flex items-center gap-2">
+            <span>Identity:</span>
+            <span className="text-emerald-400 font-bold">{user ? (user.role === 'ADMIN' ? 'Root Admin' : user.name || 'Student') : 'Guest Explorer'}</span>
           </div>
         </div>
 
@@ -46,7 +47,7 @@ const CourseGrid = () => {
           {coursesData.map((course) => {
             const firstModule = course.modules[0];
             const firstLesson = firstModule?.lessons[0];
-            const isUnlocked = user.unlockedModules.includes(firstModule?.id) || user.role === 'ADMIN' || user.role === 'INSTRUCTOR';
+            const isUnlocked = user ? (user.unlockedModules.includes(firstModule?.id) || user.role === 'ADMIN') : false;
 
             return (
               <div
