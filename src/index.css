@@ -22,6 +22,7 @@ body {
   overflow-x: hidden;
   selection-background-color: #10b981;
   selection-color: #05070a;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 code, pre, .font-mono {
@@ -99,4 +100,116 @@ code, pre, .font-mono {
 
 .text-sm {
   font-size: 14px !important;
+}
+
+/* ============================================================ */
+/* ☀️ LIGHT / WHITE THEME STYLING SYSTEM                        */
+/* ============================================================ */
+
+body.light-theme {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+body.light-theme .cyber-grid {
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px) !important;
+}
+
+/* Light Mode Background Overrides */
+body.light-theme nav,
+body.light-theme header,
+body.light-theme .bg-\[\#05070a\],
+body.light-theme main.bg-\[\#05070a\] {
+  background-color: #f8fafc !important;
+}
+
+body.light-theme .bg-\[\#090d16\],
+body.light-theme .bg-\[\#0b0e14\],
+body.light-theme .bg-\[\#0e121b\],
+body.light-theme .bg-\[\#0a0e17\],
+body.light-theme .bg-\[\#0c121e\],
+body.light-theme .bg-\[\#090c13\]\/90,
+body.light-theme aside.bg-\[\#090d16\] {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03) !important;
+}
+
+body.light-theme .bg-\[\#07090e\],
+body.light-theme .bg-\[\#030508\],
+body.light-theme .bg-\[\#06080e\],
+body.light-theme .bg-slate-950,
+body.light-theme .bg-slate-950\/60,
+body.light-theme .bg-slate-950\/80,
+body.light-theme .bg-slate-900,
+body.light-theme .bg-slate-900\/80,
+body.light-theme .bg-slate-900\/90 {
+  background-color: #f1f5f9 !important;
+}
+
+body.light-theme footer {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Light Mode Border Overrides */
+body.light-theme .border-slate-800,
+body.light-theme .border-slate-800\/80,
+body.light-theme .border-slate-800\/60,
+body.light-theme .border-slate-800\/50,
+body.light-theme .border-slate-900,
+body.light-theme .border-slate-700,
+body.light-theme .border-slate-800\/40,
+body.light-theme .divide-slate-800\/60 > * {
+  border-color: #e2e8f0 !important;
+}
+
+/* Light Mode Text Color Overrides */
+body.light-theme .text-white,
+body.light-theme .text-slate-100,
+body.light-theme .text-slate-200 {
+  color: #0f172a !important;
+}
+
+body.light-theme .text-slate-300,
+body.light-theme .text-slate-400 {
+  color: #475569 !important;
+}
+
+body.light-theme .text-slate-500 {
+  color: #64748b !important;
+}
+
+body.light-theme .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+/* Form input styling in light mode */
+body.light-theme input,
+body.light-theme textarea,
+body.light-theme select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-theme input:focus,
+body.light-theme textarea:focus,
+body.light-theme select:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Scrollbar in light mode */
+body.light-theme .custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+
+body.light-theme .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+}
+
+body.light-theme .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
 }

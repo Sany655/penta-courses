@@ -110,6 +110,8 @@ const CourseOverview = () => {
           <div className="space-y-4">
             {course.modules.map((mod, idx) => {
               const isUnlocked = user.unlockedModules.includes(mod.id) || user.role !== 'STUDENT';
+              const isPending = (user.pendingModules || []).includes(mod.id);
+
               return (
                 <div
                   key={mod.id}
@@ -120,6 +122,10 @@ const CourseOverview = () => {
                       <span className="text-xs font-mono text-cyan-400 font-bold">PHASE 0{idx + 1}</span>
                       {isUnlocked ? (
                         <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-mono border border-emerald-500/20">Unlocked</span>
+                      ) : isPending ? (
+                        <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-mono border border-amber-500/30 flex items-center gap-1 font-bold animate-pulse">
+                          ● Admin Verification Pending
+                        </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-mono border border-amber-500/20">Requires Assessment / bKash Bypass</span>
                       )}
@@ -131,7 +137,7 @@ const CourseOverview = () => {
                   </div>
 
                   <div className="flex items-center gap-2.5 self-end md:self-center">
-                    {!isUnlocked && (
+                    {!isUnlocked && !isPending && (
                       <button
                         onClick={() => setSelectedModuleForPay(mod)}
                         className="px-3.5 py-2 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/30 text-xs font-mono font-bold transition flex items-center gap-1.5"
@@ -141,32 +147,42 @@ const CourseOverview = () => {
                       </button>
                     )}
 
-                    <button
-                      onClick={() => {
-                        if (isUnlocked) {
-                          navigate(`/learn/${course.id}/${mod.id}/${mod.lessons[0].id}`);
-                        } else {
-                          setSelectedModuleForPay(mod);
-                        }
-                      }}
-                      className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 ${
-                        isUnlocked
-                          ? 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
-                          : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-                      }`}
-                    >
-                      {isUnlocked ? (
-                        <>
-                          <span>Enter Phase</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Locked (Unlock)</span>
-                        </>
-                      )}
-                    </button>
+                    {isPending ? (
+                      <button
+                        onClick={() => alert('Your bKash transaction is currently pending admin verification. Access will be unlocked once approved.')}
+                        className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center gap-1.5"
+                      >
+                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Awaiting Approval</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (isUnlocked) {
+                            navigate(`/learn/${course.id}/${mod.id}/${mod.lessons[0].id}`);
+                          } else {
+                            setSelectedModuleForPay(mod);
+                          }
+                        }}
+                        className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 ${
+                          isUnlocked
+                            ? 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
+                            : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                        }`}
+                      >
+                        {isUnlocked ? (
+                          <>
+                            <span>Enter Phase</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Locked (Unlock)</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               );

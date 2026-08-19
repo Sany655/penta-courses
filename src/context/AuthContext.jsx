@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
       unlockedModules: ['module-1'],
       bypassedModules: [],
+      pendingModules: [],
       completedQuizzes: []
     };
   });
@@ -37,7 +38,7 @@ export const AuthProvider = ({ children }) => {
       phoneNumber: '01712-345678',
       accountType: 'Personal', // 'Personal' | 'Merchant'
       defaultFeeBdt: '250',
-      instructions: 'Send Money to the bKash number below with your email as Reference, then submit your Transaction ID (TrxID) to unlock access.'
+      instructions: 'Send Money to the bKash number below with your email as Reference, then submit your Transaction ID (TrxID) for admin approval.'
     };
   });
 
@@ -54,10 +55,16 @@ export const AuthProvider = ({ children }) => {
         amount: '250 BDT',
         trxId: '8M4K9L2P1Q',
         senderPhone: '01799887766',
-        timestamp: new Date(Date.now() - 3600000 * 5).toLocaleString(),
-        status: 'VERIFIED'
+        timestamp: new Date(Date.now() - 3600000 * 2).toLocaleString(),
+        status: 'PENDING'
       }
     ];
+  });
+
+  // Persistent granted access dictionary: { [email]: string[] }
+  const [grantedAccessMap, setGrantedAccessMap] = useState(() => {
+    const saved = localStorage.getItem('penta_granted_access');
+    return saved ? JSON.parse(saved) : {};
   });
 
   useEffect(() => {
@@ -76,10 +83,33 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('penta_bkash_txns', JSON.stringify(transactions));
   }, [transactions]);
 
+  useEffect(() => {
+    localStorage.setItem('penta_granted_access', JSON.stringify(grantedAccessMap));
+  }, [grantedAccessMap]);
+
+  // Sync granted access with active user
+  useEffect(() => {
+    if (user?.email && grantedAccessMap[user.email]) {
+      const additionalUnlocked = grantedAccessMap[user.email];
+      setUser(prev => {
+        const merged = Array.from(new Set([...prev.unlockedModules, ...additionalUnlocked]));
+        if (merged.length !== prev.unlockedModules.length) {
+          return {
+            ...prev,
+            unlockedModules: merged,
+            pendingModules: (prev.pendingModules || []).filter(id => !additionalUnlocked.includes(id))
+          };
+        }
+        return prev;
+      });
+    }
+  }, [user?.email, grantedAccessMap]);
+
   const updateBkashSettings = (newSettings) => {
     setBkashSettings(prev => ({ ...prev, ...newSettings }));
   };
 
+  // Student submits payment -> status is PENDING (No automatic unlock)
   const submitBkashPayment = ({ itemType, itemId, itemTitle, amount, trxId, senderPhone }) => {
     const newTxn = {
       id: `txn_${Date.now()}`,
@@ -92,29 +122,98 @@ export const AuthProvider = ({ children }) => {
       trxId: trxId.toUpperCase(),
       senderPhone: senderPhone || 'N/A',
       timestamp: new Date().toLocaleString(),
-      status: 'VERIFIED'
+      status: 'PENDING'
     };
 
     setTransactions(prev => [newTxn, ...prev]);
 
-    // Authorize & unlock access
+    // Tag the module as pending review for this student
     if (itemId) {
-      if (Array.isArray(itemId)) {
-        setUser(prev => ({
-          ...prev,
-          unlockedModules: Array.from(new Set([...prev.unlockedModules, ...itemId])),
-          bypassedModules: Array.from(new Set([...prev.bypassedModules, ...itemId]))
-        }));
-      } else {
-        setUser(prev => ({
-          ...prev,
-          unlockedModules: Array.from(new Set([...prev.unlockedModules, itemId])),
-          bypassedModules: Array.from(new Set([...prev.bypassedModules, itemId]))
-        }));
-      }
+      const itemsToAdd = Array.isArray(itemId) ? itemId : [itemId];
+      setUser(prev => ({
+        ...prev,
+        pendingModules: Array.from(new Set([...(prev.pendingModules || []), ...itemsToAdd]))
+      }));
     }
 
-    return { success: true, txn: newTxn };
+    return { 
+      success: true, 
+      message: 'Transaction submitted! Awaiting administrator verification.',
+      txn: newTxn 
+    };
+  };
+
+  // Admin approves transaction -> access is granted to student
+  const approveTransaction = (txnId) => {
+    const targetTxn = transactions.find(t => t.id === txnId);
+    if (!targetTxn) return { success: false, message: 'Transaction not found.' };
+
+    const itemsToUnlock = Array.isArray(targetTxn.itemId) ? targetTxn.itemId : [targetTxn.itemId];
+
+    // Update transaction status
+    setTransactions(prev => prev.map(t => t.id === txnId ? { ...t, status: 'APPROVED' } : t));
+
+    // Save into granted access map for that student
+    setGrantedAccessMap(prev => {
+      const existing = prev[targetTxn.studentEmail] || [];
+      return {
+        ...prev,
+        [targetTxn.studentEmail]: Array.from(new Set([...existing, ...itemsToUnlock]))
+      };
+    });
+
+    // If currently logged in user matches, unlock immediately
+    if (user?.email === targetTxn.studentEmail) {
+      setUser(prev => ({
+        ...prev,
+        unlockedModules: Array.from(new Set([...prev.unlockedModules, ...itemsToUnlock])),
+        bypassedModules: Array.from(new Set([...prev.bypassedModules, ...itemsToUnlock])),
+        pendingModules: (prev.pendingModules || []).filter(id => !itemsToUnlock.includes(id))
+      }));
+    }
+
+    return { success: true, txn: targetTxn };
+  };
+
+  // Admin rejects transaction
+  const rejectTransaction = (txnId, reason = 'Verification Failed') => {
+    const targetTxn = transactions.find(t => t.id === txnId);
+    if (!targetTxn) return { success: false };
+
+    setTransactions(prev => prev.map(t => t.id === txnId ? { ...t, status: 'REJECTED', rejectReason: reason } : t));
+
+    if (targetTxn && user?.email === targetTxn.studentEmail) {
+      const items = Array.isArray(targetTxn.itemId) ? targetTxn.itemId : [targetTxn.itemId];
+      setUser(prev => ({
+        ...prev,
+        pendingModules: (prev.pendingModules || []).filter(id => !items.includes(id))
+      }));
+    }
+
+    return { success: true };
+  };
+
+  // Admin manual direct grant
+  const manualGrantAccess = (studentEmail, moduleIdOrIds) => {
+    const itemsToUnlock = Array.isArray(moduleIdOrIds) ? moduleIdOrIds : [moduleIdOrIds];
+    
+    setGrantedAccessMap(prev => {
+      const existing = prev[studentEmail] || [];
+      return {
+        ...prev,
+        [studentEmail]: Array.from(new Set([...existing, ...itemsToUnlock]))
+      };
+    });
+
+    if (user?.email === studentEmail) {
+      setUser(prev => ({
+        ...prev,
+        unlockedModules: Array.from(new Set([...prev.unlockedModules, ...itemsToUnlock])),
+        pendingModules: (prev.pendingModules || []).filter(id => !itemsToUnlock.includes(id))
+      }));
+    }
+
+    return { success: true };
   };
 
   const deleteTransaction = (txnId) => {
@@ -131,6 +230,7 @@ export const AuthProvider = ({ children }) => {
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
         unlockedModules: [],
         bypassedModules: [],
+        pendingModules: [],
         completedQuizzes: []
       });
       return true;
@@ -164,7 +264,8 @@ export const AuthProvider = ({ children }) => {
   const unlockNextModule = (moduleId) => {
     setUser(prev => ({
       ...prev,
-      unlockedModules: Array.from(new Set([...prev.unlockedModules, moduleId]))
+      unlockedModules: Array.from(new Set([...prev.unlockedModules, moduleId])),
+      pendingModules: (prev.pendingModules || []).filter(id => id !== moduleId)
     }));
   };
 
@@ -172,7 +273,8 @@ export const AuthProvider = ({ children }) => {
     setUser(prev => ({
       ...prev,
       unlockedModules: Array.from(new Set([...prev.unlockedModules, moduleId])),
-      bypassedModules: Array.from(new Set([...prev.bypassedModules, moduleId]))
+      bypassedModules: Array.from(new Set([...prev.bypassedModules, moduleId])),
+      pendingModules: (prev.pendingModules || []).filter(id => id !== moduleId)
     }));
   };
 
@@ -195,6 +297,9 @@ export const AuthProvider = ({ children }) => {
       updateBkashSettings,
       transactions,
       submitBkashPayment,
+      approveTransaction,
+      rejectTransaction,
+      manualGrantAccess,
       deleteTransaction,
       unlockNextModule,
       bypassModuleWithPayment,

@@ -6,11 +6,13 @@ import CourseOverview from './pages/CourseOverview';
 import LearningWorkspace from './components/student/LearningWorkspace';
 import AdminDashboard from './pages/AdminDashboard';
 import { AuthProvider, useAuth, ROLES } from './context/AuthContext';
-import { Terminal, Shield, Sparkles, User, ChevronDown } from 'lucide-react';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { Terminal, Shield, Sparkles, User, ChevronDown, Sun, Moon } from 'lucide-react';
 import './App.css';
 
 function NavigationBar() {
   const { user, switchRole } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const location = useLocation();
   const isWorkspace = location.pathname.startsWith('/learn');
 
@@ -20,7 +22,7 @@ function NavigationBar() {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-[#05070a]/90 backdrop-blur-md border-b border-slate-800/80 px-6 flex items-center justify-between z-40">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-[#05070a]/90 backdrop-blur-md border-b border-slate-800/80 px-6 flex items-center justify-between z-40 transition-colors">
       {/* Brand Logo */}
       <div className="flex items-center space-x-3">
         <Link to="/" className="flex items-center space-x-2 text-white font-mono font-bold text-sm tracking-wide">
@@ -35,15 +37,29 @@ function NavigationBar() {
 
       {/* Navigation Links */}
       <div className="hidden md:flex items-center space-x-8 text-xs font-mono text-slate-400">
-        <a href="/#courses" className="hover:text-white transition">Curriculum Tracks</a>
+        <a href="/#courses" className="hover:text-emerald-400 transition">Curriculum Tracks</a>
         <Link to="/admin" className="hover:text-cyan-400 transition flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
           <span>AI Admin Studio</span>
         </Link>
       </div>
 
-      {/* Interactive RBAC Switcher */}
+      {/* Interactive RBAC Switcher & Theme Switcher */}
       <div className="flex items-center space-x-3">
+        {/* Light / Dark Mode Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition flex items-center justify-center shadow-sm"
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {isDark ? (
+            <Sun className="w-4 h-4 text-amber-400 animate-spin-slow" />
+          ) : (
+            <Moon className="w-4 h-4 text-cyan-400" />
+          )}
+        </button>
+
+        {/* Role Switcher */}
         <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-xl p-1 px-2.5 text-xs font-mono">
           <span className="text-slate-500 text-[11px]">Role:</span>
           <select
@@ -71,31 +87,33 @@ function NavigationBar() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-[#05070a] text-slate-100 flex flex-col font-sans">
-          <NavigationBar />
-          <div className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/course/:courseId/overview" element={<CourseOverview />} />
-              <Route path="/learn/:courseId/:moduleId/:lessonId" element={<LearningWorkspace />} />
-              <Route path="/admin/*" element={<AdminDashboard />} />
-            </Routes>
-          </div>
-          <footer className="py-8 bg-[#030508] border-t border-slate-900 text-center text-xs font-mono text-slate-500">
-            <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>© 2026 Pentabrid Technical Engine. Architectural RBAC & Telemetry Labs.</div>
-              <div className="flex space-x-4">
-                <span className="text-emerald-400">● 4 Node Clusters Online</span>
-                <span>MySQL + Prisma Engine</span>
-              </div>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen bg-[#05070a] text-slate-100 flex flex-col font-sans transition-colors">
+            <NavigationBar />
+            <div className="flex-1">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/course/:courseId/overview" element={<CourseOverview />} />
+                <Route path="/learn/:courseId/:moduleId/:lessonId" element={<LearningWorkspace />} />
+                <Route path="/admin/*" element={<AdminDashboard />} />
+              </Routes>
             </div>
-          </footer>
-        </div>
-      </Router>
-    </AuthProvider>
+            <footer className="py-8 bg-[#030508] border-t border-slate-900 text-center text-xs font-mono text-slate-500">
+              <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>© 2026 Pentabrid Technical Engine. Architectural RBAC & Telemetry Labs.</div>
+                <div className="flex space-x-4">
+                  <span className="text-emerald-400">● 4 Node Clusters Online</span>
+                  <span>MySQL + Prisma Engine</span>
+                </div>
+              </div>
+            </footer>
+          </div>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

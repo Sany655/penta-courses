@@ -39,7 +39,7 @@ Designed both as a **stand-alone learning destination** and a **white-label Mark
 ```
 
 ### 1. 🚀 High-Converting Marketing & Landing Engine
-* **Aesthetic**: Modern obsidian dark mode (`#05070a`), neon emerald spotlights, ambient matrix grids, and sub-second fluid transitions.
+* **Aesthetic & Dual Theming**: Obsidian dark mode (`#05070a`) and crisp white light mode (`#f8fafc`) with dynamic ambient grid lines, high-contrast typography, and instant persistent theme toggle.
 * **Hero Experience**: Real-time terminal typing subheadline cycling live CLI commands across all technical tracks.
 * **Dynamic Content Control**: Real-time toggling and updating of hero headlines and technical commands directly via the Admin Studio.
 * **Curriculum Catalog**: Dynamic track badges showing difficulty indices, estimated hours, lock/unlock states, and prerequisite dependency graphs.
@@ -52,30 +52,31 @@ Designed both as a **stand-alone learning destination** and a **white-label Mark
 * **Granular Roles**: Three built-in permission tiers:
   * `STUDENT`: Access to enrolled courses, interactive sandbox workspace, quiz submissions, and payment unlocks.
   * `INSTRUCTOR`: Access to course authoring tools, student progression telemetry, and module reviews.
-  * `ADMIN`: Full system configuration, AI Block synthesizer access, and direct database management.
+  * `ADMIN`: Full system configuration, AI Block synthesizer access, direct database management, and manual transaction verification.
 * **Route Guards & Middleware**: Edge-level JWT token verification redirecting unauthorized requests (`/admin/*` renders a custom cyber-styled 403 screen).
 * **Data Isolation**: Database and API queries are strictly isolated to the authenticated user's session.
 
 ---
 
 ### 3. 💻 The Interactive Student Workspace
-* **Split-Screen Layout**: Fluid, resizable dual-pane interface with draggable divider (clamped between 25% and 75%) and responsive mobile tab switching.
+* **Split-Screen Layout**: Fluid, resizable dual-pane interface with draggable divider (clamped between 25% and 75%), in-workspace light/dark switcher, and responsive mobile tab switching.
 * **Zero-Video Interactive UI Blocks**:
   * `<MarkdownBlock/>`: Structured theoretical doctrine and mathematical principles.
-  * `<AnimatedTerminal/>`: Auto-typing terminal simulator with custom prompt (`user@penta-kali:~$`), stdout streaming, copy buffer, and instant replay.
+  * `<AnimatedTerminal/>`: Auto-typing terminal simulator with custom prompt (`user@lab-env:~$`), stdout streaming, copy buffer, and instant replay.
   * `<CodeStepper/>`: Step-by-step code highlighting with contextual explanatory tooltips.
   * `<NetworkFlow/>`: Animated SVG/node data-flow simulator demonstrating packet movement between kernel and userland layers.
 * **Gamified Gatekeeper Progression**:
   * Lessons remain locked until the module's `<QuizGatekeeper/>` assessment is passed with at least an **80% score**.
-  * **bKash Instant Bypass & Enrollment Gateway**: Integrated modal with custom merchant/personal bKash phone numbers, reference tagging, and instant TrxID submission for manual/instant authorization.
+  * **bKash Instant Bypass & Enrollment Gateway**: Integrated modal with custom merchant/personal bKash phone numbers, reference tagging, and instant TrxID submission for manual admin approval.
 
 ---
 
 ### 4. 🤖 AI-Powered Admin Studio & Control Node
 * **Centralized Dashboard**: A unified sidebar interface for managing the Lesson Builder, dynamic Site Settings (marketing copy), bKash Payment Gateway configuration, and Security & Auth credentials.
-* **bKash Gateway & Transaction Ledger**: 
+* **bKash Verification Center & Transaction Ledger**: 
   * Live editable bKash phone number, account type (Personal/Merchant), default bypass fee (BDT), and student instructions.
-  * Real-time audit ledger logging all submitted TrxIDs, student emails, timestamps, and authorized access.
+  * Real-time audit ledger logging all submitted TrxIDs with **"Verify & Grant Access"** and **"Reject"** one-click approval workflows.
+  * **Direct Override Tool**: Directly grant module or full course access to any student email address on demand.
 * **Notion-Style Block Editor**: Stackable, reorderable visual block authoring for Markdown, Terminal CLI, Code Stepper, and Network Diagrams.
 * **Human-in-the-Loop Gemini LLM Synthesizer**:
   * Integrated prompt modal connected to Google's Gemini 2.5 API.

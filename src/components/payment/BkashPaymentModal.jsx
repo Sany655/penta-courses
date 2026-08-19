@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle2, Copy, Check, AlertCircle, 
-  Smartphone, ShieldCheck, ArrowRight, Zap, X, Lock
+  Smartphone, ShieldCheck, ArrowRight, Zap, X, Lock, Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
 
 export const BkashPaymentModal = ({
@@ -22,7 +21,7 @@ export const BkashPaymentModal = ({
   const [trxId, setTrxId] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
   const [copied, setCopied] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -32,7 +31,7 @@ export const BkashPaymentModal = ({
     phoneNumber: '01712-345678',
     accountType: 'Personal',
     defaultFeeBdt: '250',
-    instructions: 'Send Money to the bKash number below, then enter your TrxID to unlock access.'
+    instructions: 'Send Money to the bKash number below, then enter your TrxID for admin verification.'
   };
 
   const finalAmount = amountBdt || currentBkash.defaultFeeBdt || '250';
@@ -48,7 +47,7 @@ export const BkashPaymentModal = ({
     setError('');
 
     if (!user || !user.email) {
-      setError('You must be logged in to verify payment and associate access with your account.');
+      setError('You must be logged in to submit payment so the administrator can grant access to your account.');
       return;
     }
 
@@ -57,7 +56,7 @@ export const BkashPaymentModal = ({
       return;
     }
 
-    setIsVerifying(true);
+    setIsSubmitting(true);
 
     setTimeout(() => {
       const result = submitBkashPayment({
@@ -69,27 +68,21 @@ export const BkashPaymentModal = ({
         senderPhone: senderPhone.trim() || 'N/A'
       });
 
-      setIsVerifying(false);
+      setIsSubmitting(false);
 
       if (result.success) {
         setIsSuccess(true);
-        confetti({
-          particleCount: 120,
-          spread: 80,
-          origin: { y: 0.6 }
-        });
-
         setTimeout(() => {
           if (onSuccess) onSuccess(result);
           onClose();
           setIsSuccess(false);
           setTrxId('');
           setSenderPhone('');
-        }, 1800);
+        }, 2800);
       } else {
-        setError(result.message || 'Payment verification failed.');
+        setError(result.message || 'Payment submission failed.');
       }
-    }, 1200);
+    }, 1000);
   };
 
   return (
@@ -103,7 +96,7 @@ export const BkashPaymentModal = ({
         >
           {/* Top Decorative Glow */}
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-pink-600/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Modal Header */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-4 relative z-10">
@@ -114,12 +107,12 @@ export const BkashPaymentModal = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-white tracking-wide">bKash Instant Gateway</h3>
-                  <span className="px-2 py-0.5 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 text-[10px] font-mono font-bold uppercase">
-                    Manual Verification
+                  <h3 className="text-lg font-bold text-white tracking-wide">bKash Payment Gateway</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold uppercase">
+                    Admin Verification
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 font-mono">Fast-track curriculum authorization</p>
+                <p className="text-xs text-slate-400 font-mono">Manual audit and fast-track clearance</p>
               </div>
             </div>
             <button
@@ -130,20 +123,21 @@ export const BkashPaymentModal = ({
             </button>
           </div>
 
-          {/* Success Celebration View */}
+          {/* Submission Success View */}
           {isSuccess ? (
             <div className="py-8 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-                <CheckCircle2 className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(245,158,11,0.25)]">
+                <Clock className="w-8 h-8 animate-pulse" />
               </div>
               <div>
-                <h4 className="text-xl font-extrabold text-white">Payment Verified & Authorized!</h4>
+                <h4 className="text-xl font-extrabold text-white">TrxID Submitted for Verification!</h4>
                 <p className="text-sm text-slate-300 font-mono mt-1">
-                  Access unlocked for: <span className="text-cyan-400 font-bold">{itemTitle}</span>
+                  Access for: <span className="text-cyan-400 font-bold">{itemTitle}</span>
                 </p>
               </div>
-              <div className="text-xs text-slate-500 font-mono">
-                Transaction ID: <span className="text-emerald-400 font-bold">{trxId.toUpperCase()}</span> recorded to session ledger.
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-400 font-mono space-y-1">
+                <div>TrxID: <span className="text-pink-400 font-bold">{trxId.toUpperCase()}</span></div>
+                <div className="text-slate-500">Your transaction has been queued. An administrator will verify the payment and grant access shortly.</div>
               </div>
             </div>
           ) : (
@@ -151,9 +145,9 @@ export const BkashPaymentModal = ({
               {/* Item Summary Card */}
               <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <span className="text-[11px] font-mono text-slate-500 uppercase tracking-wider">Purchasing Access</span>
+                  <span className="text-[11px] font-mono text-slate-500 uppercase tracking-wider">Access Request</span>
                   <div className="text-sm font-bold text-white line-clamp-1">{itemTitle}</div>
-                  <div className="text-xs text-slate-400">Authenticated user: <span className="text-emerald-400 font-mono">{user?.email || 'Guest'}</span></div>
+                  <div className="text-xs text-slate-400">Student: <span className="text-emerald-400 font-mono">{user?.email || 'Guest'}</span></div>
                 </div>
                 <div className="text-right pl-4">
                   <div className="text-xl font-extrabold text-pink-400 font-mono">৳{finalAmount}</div>
@@ -197,12 +191,12 @@ export const BkashPaymentModal = ({
                 </div>
 
                 <div className="text-xs text-slate-300 space-y-1 pt-1 leading-relaxed">
-                  <p className="font-medium text-slate-200">Instructions:</p>
+                  <p className="font-medium text-slate-200">Steps to Pay:</p>
                   <ol className="list-decimal list-inside text-[11px] text-slate-400 space-y-0.5">
                     <li>Open bKash app or dial <code className="text-pink-400">*247#</code>.</li>
                     <li>Choose <strong className="text-slate-200">{currentBkash.accountType === 'Merchant' ? 'Payment' : 'Send Money'}</strong> to the number above.</li>
-                    <li>Enter amount <strong className="text-emerald-400">৳{finalAmount}</strong> and use your email as Reference.</li>
-                    <li>Copy the received <strong className="text-pink-300">Transaction ID (TrxID)</strong> and submit below.</li>
+                    <li>Enter amount <strong className="text-emerald-400">৳{finalAmount}</strong> and use your email in Reference.</li>
+                    <li>Paste the received <strong className="text-pink-300">Transaction ID (TrxID)</strong> below to submit for admin clearance.</li>
                   </ol>
                 </div>
               </div>
@@ -212,7 +206,7 @@ export const BkashPaymentModal = ({
                 <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
-                    <span>Please log in to save your unlocked access.</span>
+                    <span>Please log in to tie payment to your account.</span>
                   </div>
                   <Link
                     to="/auth"
@@ -242,7 +236,7 @@ export const BkashPaymentModal = ({
 
                   <div className="space-y-1">
                     <label className="block text-xs font-mono text-slate-400">
-                      Sender Number (Optional)
+                      Sender Phone (Optional)
                     </label>
                     <input
                       type="text"
@@ -263,22 +257,22 @@ export const BkashPaymentModal = ({
 
                 <button
                   type="submit"
-                  disabled={isVerifying || !trxId.trim()}
+                  disabled={isSubmitting || !trxId.trim()}
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#e2136e] via-pink-600 to-[#e2136e] hover:from-[#d01063] hover:to-pink-500 disabled:opacity-50 text-white font-bold text-xs font-mono tracking-wide uppercase transition shadow-[0_0_25px_rgba(226,19,110,0.35)] flex items-center justify-center gap-2"
                 >
-                  {isVerifying ? (
+                  {isSubmitting ? (
                     <>
                       <motion.div
                         animate={{ rotate: 360 }}
                         transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
                         className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                       />
-                      <span>Verifying TrxID & Authorizing Access...</span>
+                      <span>Submitting TrxID to Admin...</span>
                     </>
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4" />
-                      <span>Verify TrxID & Unlock Access</span>
+                      <span>Submit TrxID for Verification</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -290,10 +284,10 @@ export const BkashPaymentModal = ({
           {/* Modal Footer Security Badge */}
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-500 relative z-10">
             <span className="flex items-center gap-1.5">
-              <Lock className="w-3 h-3 text-emerald-400" />
-              RBAC Cryptographic Authorization
+              <Lock className="w-3 h-3 text-amber-400" />
+              Manual Admin Authorization Queue
             </span>
-            <span className="text-slate-400">24/7 Admin Audit Ready</span>
+            <span className="text-slate-400">Audit-Verified</span>
           </div>
         </motion.div>
       </div>

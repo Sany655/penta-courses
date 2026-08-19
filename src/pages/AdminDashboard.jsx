@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { 
   Shield, Sparkles, LayoutDashboard, Settings, Lock, 
   FileCode2, Smartphone, CreditCard, Trash2, CheckCircle2, 
-  Search, ExternalLink, RefreshCw 
+  Search, ExternalLink, RefreshCw, XCircle, UserCheck, Plus, Check 
 } from 'lucide-react';
 import LessonBuilder from '../components/admin/LessonBuilder';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import coursesData from '../data/courses.json';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('lesson-builder');
@@ -97,14 +98,27 @@ const AdminDashboard = () => {
 };
 
 const BkashPaymentSettings = () => {
-  const { bkashSettings, updateBkashSettings, transactions, deleteTransaction } = useAuth();
+  const { 
+    bkashSettings, 
+    updateBkashSettings, 
+    transactions, 
+    approveTransaction, 
+    rejectTransaction, 
+    manualGrantAccess, 
+    deleteTransaction 
+  } = useAuth();
   
   const [phoneNumber, setPhoneNumber] = useState(bkashSettings?.phoneNumber || '01712-345678');
   const [accountType, setAccountType] = useState(bkashSettings?.accountType || 'Personal');
   const [defaultFeeBdt, setDefaultFeeBdt] = useState(bkashSettings?.defaultFeeBdt || '250');
-  const [instructions, setInstructions] = useState(bkashSettings?.instructions || 'Send Money to the bKash number below with your email as Reference, then submit your Transaction ID (TrxID) to unlock access.');
+  const [instructions, setInstructions] = useState(bkashSettings?.instructions || 'Send Money to the bKash number below with your email as Reference, then submit your Transaction ID (TrxID) for admin approval.');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [actionNotice, setActionNotice] = useState('');
+
+  // Manual Grant State
+  const [manualEmail, setManualEmail] = useState('alex.mercer@pentabrid.io');
+  const [manualModuleId, setManualModuleId] = useState('module-2');
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -116,6 +130,30 @@ const BkashPaymentSettings = () => {
     });
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
+  };
+
+  const handleApprove = (txnId, studentName, itemTitle) => {
+    const res = approveTransaction(txnId);
+    if (res.success) {
+      setActionNotice(`Verified & granted access for ${studentName} on ${itemTitle}!`);
+      setTimeout(() => setActionNotice(''), 4000);
+    }
+  };
+
+  const handleReject = (txnId) => {
+    if (confirm('Reject this transaction? The student will remain locked until verified.')) {
+      rejectTransaction(txnId, 'Payment could not be verified with bKash statement');
+      setActionNotice(`Transaction ${txnId} marked as Rejected.`);
+      setTimeout(() => setActionNotice(''), 4000);
+    }
+  };
+
+  const handleManualGrantSubmit = (e) => {
+    e.preventDefault();
+    if (!manualEmail) return;
+    manualGrantAccess(manualEmail.trim(), manualModuleId);
+    setActionNotice(`Direct access granted for ${manualEmail} on ${manualModuleId}!`);
+    setTimeout(() => setActionNotice(''), 4000);
   };
 
   const filteredTxns = transactions.filter(t => 
@@ -132,102 +170,26 @@ const BkashPaymentSettings = () => {
             <div className="w-7 h-7 rounded-lg bg-[#e2136e] flex items-center justify-center text-white font-bold text-sm">
               ৳
             </div>
-            bKash Payment Gateway & Ledger
+            bKash Gateway & Verification Center
           </h2>
-          <p className="text-slate-400 text-sm mt-1">Configure student payment numbers, fee structure, and inspect verified transaction records.</p>
+          <p className="text-slate-400 text-sm mt-1">Review student transaction IDs, manually grant course access, and manage payment numbers.</p>
         </div>
       </div>
 
-      {/* Configuration Section */}
-      <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
-        <div>
-          <h3 className="text-lg font-bold text-white mb-1">Gateway Configuration</h3>
-          <p className="text-slate-400 text-xs font-mono">Changes reflect immediately in the student checkout modal across all courses.</p>
+      {actionNotice && (
+        <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-mono flex items-center gap-2.5 animate-fade-in shadow-lg">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span>{actionNotice}</span>
         </div>
+      )}
 
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <label className="block text-xs font-mono text-slate-300">
-                bKash Wallet Number <span className="text-pink-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={phoneNumber}
-                onChange={e => setPhoneNumber(e.target.value)}
-                placeholder="e.g. 01712-345678"
-                className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm font-mono focus:border-pink-500 focus:outline-none"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-mono text-slate-300">
-                Account Type <span className="text-pink-400">*</span>
-              </label>
-              <select
-                value={accountType}
-                onChange={e => setAccountType(e.target.value)}
-                className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm font-mono focus:border-pink-500 focus:outline-none"
-              >
-                <option value="Personal">Personal (Send Money)</option>
-                <option value="Merchant">Merchant (Make Payment)</option>
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-mono text-slate-300">
-                Default Instant Bypass Fee (BDT) <span className="text-pink-400">*</span>
-              </label>
-              <input
-                type="number"
-                required
-                value={defaultFeeBdt}
-                onChange={e => setDefaultFeeBdt(e.target.value)}
-                placeholder="250"
-                className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm font-mono focus:border-pink-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-xs font-mono text-slate-300">
-              Payment Instructions for Students
-            </label>
-            <textarea
-              rows={2}
-              value={instructions}
-              onChange={e => setInstructions(e.target.value)}
-              className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm focus:border-pink-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <button
-              type="submit"
-              className="px-6 py-2.5 bg-gradient-to-r from-[#e2136e] to-pink-600 hover:from-[#d01063] hover:to-pink-500 text-white font-bold rounded-xl text-sm transition shadow-[0_0_20px_rgba(226,19,110,0.3)] flex items-center gap-2"
-            >
-              <Smartphone className="w-4 h-4" />
-              <span>Save bKash Settings</span>
-            </button>
-
-            {saveSuccess && (
-              <span className="text-emerald-400 text-xs font-mono flex items-center gap-1.5 animate-fade-in">
-                <CheckCircle2 className="w-4 h-4" />
-                Settings updated and broadcasted live!
-              </span>
-            )}
-          </div>
-        </form>
-      </div>
-
-      {/* Transaction Ledger Table */}
+      {/* Transaction Ledger Table with Manual Verify Actions */}
       <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-white mb-1">Transaction Audit Ledger</h3>
+            <h3 className="text-lg font-bold text-white mb-1">Incoming Transactions & Access Requests</h3>
             <p className="text-slate-400 text-xs font-mono">
-              Total Recorded Transactions: <span className="text-pink-400 font-bold">{transactions.length}</span>
+              Pending Verification: <span className="text-amber-400 font-bold">{transactions.filter(t => t.status === 'PENDING').length}</span> &bull; Total Records: <span className="text-pink-400 font-bold">{transactions.length}</span>
             </p>
           </div>
 
@@ -245,7 +207,7 @@ const BkashPaymentSettings = () => {
 
         {filteredTxns.length === 0 ? (
           <div className="py-12 text-center text-slate-500 font-mono text-xs border border-dashed border-slate-800 rounded-xl">
-            No transactions found matching your filter.
+            No transaction records found.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -254,59 +216,215 @@ const BkashPaymentSettings = () => {
                 <tr>
                   <th className="py-3 px-4">Date / Time</th>
                   <th className="py-3 px-4">Student</th>
-                  <th className="py-3 px-4">Access Granted</th>
+                  <th className="py-3 px-4">Access Target</th>
                   <th className="py-3 px-4">TrxID / Sender</th>
                   <th className="py-3 px-4">Amount</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4 text-right">Verification Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-mono">
-                {filteredTxns.map((txn) => (
-                  <tr key={txn.id} className="hover:bg-slate-900/40 transition">
-                    <td className="py-3.5 px-4 text-slate-400 whitespace-nowrap text-[11px]">
-                      {txn.timestamp}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-200">{txn.studentName}</div>
-                      <div className="text-slate-500 text-[10px]">{txn.studentEmail}</div>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-300 font-medium max-w-[200px] truncate">
-                      {txn.itemTitle}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="inline-block px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/30 text-pink-400 font-bold text-[11px]">
-                        {txn.trxId}
-                      </div>
-                      <div className="text-slate-500 text-[10px] mt-0.5">Sender: {txn.senderPhone}</div>
-                    </td>
-                    <td className="py-3.5 px-4 text-emerald-400 font-bold whitespace-nowrap">
-                      {txn.amount}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
-                        {txn.status || 'VERIFIED'}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => {
-                          if (confirm(`Remove transaction record ${txn.trxId}?`)) {
-                            deleteTransaction(txn.id);
-                          }
-                        }}
-                        className="p-1.5 text-slate-500 hover:text-rose-400 transition hover:bg-slate-800 rounded-lg"
-                        title="Delete Record"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {filteredTxns.map((txn) => {
+                  const isPending = txn.status === 'PENDING';
+                  const isApproved = txn.status === 'APPROVED' || txn.status === 'VERIFIED';
+                  const isRejected = txn.status === 'REJECTED';
+
+                  return (
+                    <tr key={txn.id} className={`hover:bg-slate-900/40 transition ${isPending ? 'bg-amber-500/5' : ''}`}>
+                      <td className="py-3.5 px-4 text-slate-400 whitespace-nowrap text-[11px]">
+                        {txn.timestamp}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-slate-200">{txn.studentName}</div>
+                        <div className="text-slate-500 text-[10px]">{txn.studentEmail}</div>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-300 font-medium max-w-[200px] truncate">
+                        {txn.itemTitle}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="inline-block px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/30 text-pink-400 font-bold text-[11px]">
+                          {txn.trxId}
+                        </div>
+                        <div className="text-slate-500 text-[10px] mt-0.5">Sender: {txn.senderPhone}</div>
+                      </td>
+                      <td className="py-3.5 px-4 text-emerald-400 font-bold whitespace-nowrap">
+                        {txn.amount}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {isPending && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-bold animate-pulse">
+                            ● Awaiting Approval
+                          </span>
+                        )}
+                        {isApproved && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                            ✓ Verified & Granted
+                          </span>
+                        )}
+                        {isRejected && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[10px] font-bold">
+                            ✗ Rejected
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          {isPending ? (
+                            <>
+                              <button
+                                onClick={() => handleApprove(txn.id, txn.studentName, txn.itemTitle)}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 transition shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+                                title="Approve payment and unlock curriculum access"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Verify & Grant</span>
+                              </button>
+                              <button
+                                onClick={() => handleReject(txn.id)}
+                                className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition"
+                                title="Reject payment"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                if (confirm(`Delete transaction record ${txn.trxId}?`)) {
+                                  deleteTransaction(txn.id);
+                                }
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-rose-400 transition hover:bg-slate-800 rounded-lg"
+                              title="Delete Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
+      </div>
+
+      {/* Manual Direct Grant Card & Gateway Config Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Direct Access Grant Tool */}
+        <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
+          <div className="flex items-center gap-2 text-white font-bold">
+            <UserCheck className="w-5 h-5 text-cyan-400" />
+            <h3>Manual Direct Grant (Admin Override)</h3>
+          </div>
+          <p className="text-slate-400 text-xs font-mono">Directly grant access to any student email without requiring a bKash TrxID.</p>
+
+          <form onSubmit={handleManualGrantSubmit} className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <label className="block text-xs font-mono text-slate-300">Student Email</label>
+              <input
+                type="email"
+                required
+                value={manualEmail}
+                onChange={e => setManualEmail(e.target.value)}
+                placeholder="student@pentabrid.io"
+                className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm font-mono focus:border-cyan-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-mono text-slate-300">Select Target Module / Phase</label>
+              <select
+                value={manualModuleId}
+                onChange={e => setManualModuleId(e.target.value)}
+                className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm font-mono focus:border-cyan-500 focus:outline-none"
+              >
+                {coursesData.flatMap(c => c.modules.map((m, idx) => (
+                  <option key={m.id} value={m.id} className="bg-[#090d16]">
+                    {c.title} — Phase 0{idx + 1}: {m.title}
+                  </option>
+                )))}
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-xl text-xs font-mono transition shadow-[0_0_15px_rgba(6,182,212,0.3)] flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Grant Instant Access to Student</span>
+            </button>
+          </form>
+        </div>
+
+        {/* Gateway Configuration */}
+        <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
+          <div className="flex items-center gap-2 text-white font-bold">
+            <Smartphone className="w-5 h-5 text-pink-400" />
+            <h3>bKash Account Settings</h3>
+          </div>
+          <p className="text-slate-400 text-xs font-mono">Edit the number and instructions displayed in the student payment modal.</p>
+
+          <form onSubmit={handleSave} className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="block text-xs font-mono text-slate-300">bKash Number</label>
+                <input
+                  type="text"
+                  required
+                  value={phoneNumber}
+                  onChange={e => setPhoneNumber(e.target.value)}
+                  className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm font-mono focus:border-pink-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-mono text-slate-300">Account Type</label>
+                <select
+                  value={accountType}
+                  onChange={e => setAccountType(e.target.value)}
+                  className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm font-mono focus:border-pink-500 focus:outline-none"
+                >
+                  <option value="Personal">Personal (Send Money)</option>
+                  <option value="Merchant">Merchant (Payment)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-mono text-slate-300">Default Fee (BDT)</label>
+              <input
+                type="number"
+                required
+                value={defaultFeeBdt}
+                onChange={e => setDefaultFeeBdt(e.target.value)}
+                className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm font-mono focus:border-pink-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-mono text-slate-300">Student Instructions Note</label>
+              <textarea
+                rows={2}
+                value={instructions}
+                onChange={e => setInstructions(e.target.value)}
+                className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-xs focus:border-pink-500 focus:outline-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-gradient-to-r from-[#e2136e] to-pink-600 hover:from-[#d01063] hover:to-pink-500 text-white font-bold rounded-xl text-xs font-mono transition shadow-[0_0_20px_rgba(226,19,110,0.3)] flex items-center justify-center gap-2"
+            >
+              <Check className="w-4 h-4" />
+              <span>Save Gateway Settings</span>
+            </button>
+          </form>
+        </div>
+
       </div>
     </div>
   );
@@ -435,4 +553,3 @@ const SecuritySettings = () => {
 };
 
 export default AdminDashboard;
-

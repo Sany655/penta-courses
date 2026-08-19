@@ -5,6 +5,8 @@ import {
   BookOpen, Layers, ShieldCheck, ChevronRight, ChevronLeft, Zap 
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 import coursesData from '../../data/courses.json';
 import { 
   MarkdownBlock, 
@@ -18,6 +20,7 @@ export default function LearningWorkspace() {
   const { courseId, moduleId, lessonId } = useParams();
   const navigate = useNavigate();
   const { user, unlockNextModule, bypassModuleWithPayment, recordQuizSuccess } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   
   const [course, setCourse] = useState(null);
   const [module, setModule] = useState(null);
@@ -157,8 +160,20 @@ export default function LearningWorkspace() {
           </button>
         </div>
 
-        {/* Status / Role Indicator */}
+        {/* Status / Role Indicator & Theme Toggle */}
         <div className="flex items-center space-x-3">
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition flex items-center justify-center shadow-sm"
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {isDark ? (
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+            ) : (
+              <Moon className="w-3.5 h-3.5 text-cyan-400" />
+            )}
+          </button>
+
           <div className="hidden sm:flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-xs font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
             <span className="text-slate-300 font-medium">{user.role}</span>
