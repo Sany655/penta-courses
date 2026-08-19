@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LessonContent",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "courseName": { "type": "string" },
+        "moduleName": { "type": "string" },
+        "lessonTitle": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced"] }
+      },
+      "required": ["courseName", "moduleName", "lessonTitle", "difficulty"]
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["markdown", "terminal_animation", "code_stepper", "network_diagram"] },
+          "data": {
+            "type": "object",
+            "oneOf": [
+              {
+                "properties": {
+                  "content": { "type": "string" }
+                },
+                "required": ["content"]
+              },
+              {
+                "properties": {
+                  "command": { "type": "string" },
+                  "expectedOutput": { "type": "string" },
+                  "typingSpeedMs": { "type": "integer" }
+                },
+                "required": ["command", "expectedOutput", "typingSpeedMs"]
+              },
+              {
+                "properties": {
+                  "script": { "type": "string" },
+                  "language": { "type": "string" },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lines": { "type": "array", "items": { "type": "integer" } },
+                        "tooltip": { "type": "string" }
+                      },
+                      "required": ["lines", "tooltip"]
+                    }
+                  }
+                },
+                "required": ["script", "language", "steps"]
+              },
+              {
+                "properties": {
+                  "nodes": { "type": "array", "items": { "type": "string" } },
+                  "animationFlow": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "step": { "type": "integer" },
+                        "source": { "type": "string" },
+                        "target": { "type": "string" },
+                        "description": { "type": "string" }
+                      },
+                      "required": ["step", "source", "target", "description"]
+                    }
+                  }
+                },
+                "required": ["nodes", "animationFlow"]
+              }
+            ]
+          }
+        },
+        "required": ["id", "type", "data"]
+      }
+    }
+  },
+  "required": ["metadata", "blocks"]
+}

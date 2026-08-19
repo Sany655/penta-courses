@@ -1,0 +1,222 @@
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum TrackCategory {
+  WEB_DEVELOPMENT
+  NETWORKING
+  CYBERSECURITY
+  PREDICTIVE_MODELING_ML
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum BlockType {
+  MARKDOWN
+  TERMINAL_ANIMATION
+  CODE_STEPPER
+  NETWORK_DIAGRAM
+  QUIZ
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum TransactionType {
+  COURSE_PURCHASE
+  MODULE_GATEKEEPER_BYPASS
+}
+
+model User {
+  id             String             @id @default(cuid())
+  name           String?
+  email          String             @unique
+  emailVerified  DateTime?
+  image          String?
+  passwordHash   String?
+  role           Role               @default(STUDENT)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  progress       UserProgress[]
+  transactions   Transaction[]
+  enrollments    CourseEnrollment[]
+  createdCourses Course[]           @relation("InstructorCourses")
+
+  @@index([email])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Course {
+  id           String             @id @default(cuid())
+  slug         String             @unique
+  title        String
+  description  String             @db.Text
+  category     TrackCategory
+  difficulty   Difficulty
+  thumbnail    String?
+  isPublished  Boolean            @default(false)
+  priceInCents Int                @default(0)
+  instructorId String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  instructor   User               @relation("InstructorCourses", fields: [instructorId], references: [id])
+  modules      Module[]
+  enrollments  CourseEnrollment[]
+
+  @@index([category])
+  @@index([instructorId])
+}
+
+model CourseEnrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+  @@index([userId])
+}
+
+model Module {
+  id               String   @id @default(cuid())
+  courseId         String
+  title            String
+  orderIndex       Int
+  bypassFeeInCents Int      @default(299) // $2.99 microtransaction bypass
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons          Lesson[]
+  quiz             Quiz?
+
+  @@unique([courseId, orderIndex])
+  @@index([courseId])
+}
+
+model Lesson {
+  id          String         @id @default(cuid())
+  moduleId    String
+  title       String
+  orderIndex  Int
+  durationMin Int            @default(15)
+  contentJson Json           // Array of visual, stepper, terminal, or markdown blocks
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  module      Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress    UserProgress[]
+
+  @@unique([moduleId, orderIndex])
+  @@index([moduleId])
+}
+
+model Quiz {
+  id            String   @id @default(cuid())
+  moduleId      String   @unique
+  passingScore  Int      @default(80) // Percentage required to unlock next module
+  questionsJson Json     // [{ question, options: [], correctIndex, explanation }]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  module        Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+model UserProgress {
+  id             String    @id @default(cuid())
+  userId         String
+  lessonId       String
+  isCompleted    Boolean   @default(false)
+  quizPassed     Boolean   @default(false)
+  unlockedViaPay Boolean   @default(false)
+  lastBlockIndex Int       @default(0)
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  userId          String
+  stripeSessionId String            @unique
+  stripePaymentId String?           @unique
+  amountInCents   Int
+  currency        String            @default("usd")
+  status          TransactionStatus @default(PENDING)
+  type            TransactionType
+  targetEntityId  String            // module_id or course_id
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}

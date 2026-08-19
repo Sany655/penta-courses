@@ -1,0 +1,92 @@
+.map-section {
+  padding: 5rem 5%;
+}
+
+.map-container {
+  height: 600px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+  border-radius: 24px;
+}
+
+/* Dark overlay to match theme */
+.map-placeholder {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 9, 16, 0.7);
+  backdrop-filter: blur(2px);
+}
+
+.map-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.2) 0%, rgba(0, 0, 0, 0) 70%);
+  pointer-events: none;
+}
+
+.map-pin {
+  position: absolute;
+  cursor: pointer;
+}
+
+.p1 { top: 60%; left: 70%; }
+.p2 { top: 35%; left: 45%; }
+.p3 { top: 50%; left: 25%; }
+
+.pin-icon {
+  color: var(--accent-orange);
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 0 10px var(--accent-orange));
+}
+
+.pin-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: var(--accent-orange);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  z-index: 1;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+.pin-tooltip {
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  padding: 10px 15px;
+  min-width: 150px;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 3;
+}
+
+.map-pin:hover .pin-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.pin-tooltip small {
+  color: var(--text-secondary);
+}

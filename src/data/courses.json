@@ -1,0 +1,334 @@
+[
+  {
+    "id": "course-cyber-masterclass",
+    "slug": "master-cybersecurity-offensive-defense",
+    "title": "Offensive Cybersecurity & Kernel Tradecraft",
+    "category": "CYBERSECURITY",
+    "description": "An exhaustive multi-phase track covering low-level socket programming, EDR bypasses, network pivoting, and binary memory exploitation.",
+    "difficulty": "Advanced",
+    "thumbnail_url": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
+    "price": 99.99,
+    "instructor_name": "Penta SecOps",
+    "stats": {
+      "modules": 4,
+      "estimatedHours": 32,
+      "interactiveLabs": 18
+    },
+    "skills": ["Packet Dissection", "EDR Telemetry", "C2 Infrastructure", "Buffer Overflow", "Kernel Hooking"],
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Phase 1: Deep Packet Manipulation & Evasion",
+        "bypassFee": 2.99,
+        "lessons": [
+          {
+            "id": "lesson-1-1",
+            "metadata": {
+              "courseName": "Offensive Cybersecurity & Kernel Tradecraft",
+              "moduleName": "Phase 1: Deep Packet Manipulation & Evasion",
+              "lessonTitle": "Deep Packet Manipulation & Scapy Injection",
+              "difficulty": "Advanced"
+            },
+            "blocks": [
+              {
+                "id": "block-1",
+                "type": "markdown",
+                "data": {
+                  "content": "### Deep Packet Crafting\nIn this unit, we move beyond passive traffic inspection with Wireshark to programmatic raw socket manipulation using Python and Scapy. Constructing custom TCP/IP headers is essential for bypassing stateless inspection filters and fingerprinting IDS heuristics."
+                }
+              },
+              {
+                "id": "block-2",
+                "type": "code_stepper",
+                "data": {
+                  "script": "from scapy.all import IP, TCP, send\n\n# Construct target IP layer\nip_header = IP(dst='192.168.1.100', flags='DF', ttl=64)\n\n# Construct customized TCP SYN header with covert TCP options\ntcp_header = TCP(sport=49152, dport=443, flags='S', seq=1337)\n\n# Stack and transmit raw packet without OS kernel TCP handshake\nraw_packet = ip_header / tcp_header / b'PENTA_PAYLOAD'\nsend(raw_packet, verbose=0)",
+                  "language": "python",
+                  "steps": [
+                    { "lines": [1], "tooltip": "Import Scapy packet primitives for Layer 3 (IP) and Layer 4 (TCP)." },
+                    { "lines": [4], "tooltip": "Set Don't Fragment (DF) flag and uniform TTL to blend with Linux kernel traffic." },
+                    { "lines": [7], "tooltip": "Explicitly define SYN flag ('S') and custom Initial Sequence Number (ISN)." },
+                    { "lines": [10, 11], "tooltip": "Synthesize protocol layers using the '/' operator and emit over raw socket." }
+                  ]
+                }
+              },
+              {
+                "id": "block-3",
+                "type": "terminal_animation",
+                "data": {
+                  "command": "python3 scapy_injector.py --interface eth0 --target 192.168.1.100",
+                  "expectedOutput": "[+] Raw socket descriptor initialized (AF_INET, SOCK_RAW)\n[+] Crafting 54-byte TCP SYN packet...\n[*] Transmitted 1 raw frame to 192.168.1.100:443\n[+] Received SYN-ACK from target (Seq=2849102, Ack=1338)",
+                  "typingSpeedMs": 35
+                }
+              }
+            ]
+          }
+        ],
+        "quiz": {
+          "id": "quiz-m1",
+          "passingScore": 80,
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Which layer operator does Scapy use to stack network protocol layers into a single frame?",
+              "options": ["The bitwise AND operator (&)", "The division operator (/)", "The pipeline operator (|)", "The dot notation (.)"],
+              "correctIndex": 1,
+              "explanation": "Scapy overloads Python's division operator (/) to bind protocol layers from outer to inner payload."
+            },
+            {
+              "id": "q2",
+              "question": "Why would an operator use raw sockets instead of standard OS socket APIs?",
+              "options": ["To automatically encrypt all payloads with TLS", "To bypass the operating system's automatic TCP three-way handshake", "To achieve 100 Gbps line speeds without hardware acceleration", "To avoid needing root or sudo privileges"],
+              "correctIndex": 1,
+              "explanation": "Raw sockets allow fine-grained control over header flags and sequence numbers without triggering standard kernel TCP state machines."
+            }
+          ]
+        }
+      },
+      {
+        "id": "module-2",
+        "title": "Phase 2: EDR Telemetry & Kernel Hooking",
+        "bypassFee": 2.99,
+        "lessons": [
+          {
+            "id": "lesson-2-1",
+            "metadata": {
+              "courseName": "Offensive Cybersecurity & Kernel Tradecraft",
+              "moduleName": "Phase 2: EDR Telemetry & Kernel Hooking",
+              "lessonTitle": "EDR/XDR Internals & ETW-Ti Telemetry",
+              "difficulty": "Advanced"
+            },
+            "blocks": [
+              {
+                "id": "block-1",
+                "type": "markdown",
+                "data": {
+                  "content": "### Endpoint Detection & Response Mechanics\nModern EDRs hook userland APIs (`ntdll.dll`) and register kernel callbacks (`ObRegisterCallbacks`, `PsSetCreateProcessNotifyRoutine`) to intercept process creation, memory allocation, and thread injection before execution."
+                }
+              },
+              {
+                "id": "block-2",
+                "type": "network_diagram",
+                "data": {
+                  "nodes": ["Attacker Payload", "ntdll.dll (Hooked)", "Kernel SSDT", "EDR Driver (Ring 0)"],
+                  "animationFlow": [
+                    { "step": 1, "source": "Attacker Payload", "target": "ntdll.dll (Hooked)", "description": "Payload initiates NtAllocateVirtualMemory." },
+                    { "step": 2, "source": "ntdll.dll (Hooked)", "target": "EDR Driver (Ring 0)", "description": "JMP hook redirects execution telemetry to EDR kernel sensor." },
+                    { "step": 3, "source": "EDR Driver (Ring 0)", "target": "Kernel SSDT", "description": "Telemetry inspected; sys-call approved or blocked." }
+                  ]
+                }
+              },
+              {
+                "id": "block-3",
+                "type": "terminal_animation",
+                "data": {
+                  "command": "fltmc.exe && sc.exe query CarbonSensor",
+                  "expectedOutput": "Filter Name                     Num Instances    Altitude    Frame\n------------------------------  -------------  ------------  -----\nEdrMiniFilterKernelSensor                   4       328400.00    0\nWdFilter                                    3       328010.00    0\n\nSERVICE_NAME: CarbonSensor\n        TYPE               : 1  KERNEL_DRIVER\n        STATE              : 4  RUNNING",
+                  "typingSpeedMs": 30
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "course-predictive-ml",
+    "slug": "predictive-modeling-clinical-ai",
+    "title": "Predictive Modeling & Neural Architectures on Clinical Data",
+    "category": "PREDICTIVE_MODELING_ML",
+    "description": "Construct production gradient boosting and Transformer architectures on high-dimensional clinical biomarkers and tabular electronic health records (EHR).",
+    "difficulty": "Expert",
+    "thumbnail_url": "https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80",
+    "price": 129.99,
+    "instructor_name": "Dr. Sarah Lin, AI BioLab",
+    "stats": {
+      "modules": 3,
+      "estimatedHours": 28,
+      "interactiveLabs": 14
+    },
+    "skills": ["XGBoost/LightGBM", "SHAP Explainability", "Survival Analysis", "PyTorch TabNet", "Data Drift Detection"],
+    "modules": [
+      {
+        "id": "module-ml-1",
+        "title": "Module 1: Feature Attribution & SHAP Analysis",
+        "bypassFee": 2.99,
+        "lessons": [
+          {
+            "id": "lesson-ml-1",
+            "metadata": {
+              "courseName": "Predictive Modeling & Neural Architectures on Clinical Data",
+              "moduleName": "Module 1: Feature Attribution & SHAP Analysis",
+              "lessonTitle": "Interpreting Tabular Deep Learning with SHAP",
+              "difficulty": "Expert"
+            },
+            "blocks": [
+              {
+                "id": "block-ml-1",
+                "type": "markdown",
+                "data": {
+                  "content": "### Shapley Additive Explanations (SHAP)\nIn high-stakes clinical domains, black-box predictions are unacceptable. SHAP computes game-theoretic Shapley values to apportion the exact marginal contribution of each biomarker (e.g. Troponin-I, Creatinine) to the model's patient risk output."
+                }
+              },
+              {
+                "id": "block-ml-2",
+                "type": "code_stepper",
+                "data": {
+                  "script": "import shap\nimport xgboost as xgb\n\n# Train clinical risk gradient booster\nmodel = xgb.XGBClassifier(n_estimators=500, max_depth=4, learning_rate=0.03)\nmodel.fit(X_train, y_train)\n\n# Compute exact TreeSHAP values for patient cohort\nexplainer = shap.TreeExplainer(model)\nshap_values = explainer.shap_values(X_test)\n\n# Generate summary waterfall\nshap.summary_plot(shap_values, X_test, plot_type='bar')",
+                  "language": "python",
+                  "steps": [
+                    { "lines": [1, 2], "tooltip": "Import official TreeSHAP and XGBoost packages." },
+                    { "lines": [5, 6], "tooltip": "Configure low learning-rate booster to prevent overfitting on clinical sample size." },
+                    { "lines": [9, 10], "tooltip": "Utilize TreeExplainer for polynomial-time exact Shapley calculation on tree ensembles." },
+                    { "lines": [13], "tooltip": "Render global biomarker importance rankings." }
+                  ]
+                }
+              },
+              {
+                "id": "block-ml-3",
+                "type": "terminal_animation",
+                "data": {
+                  "command": "python3 train_clinical_shap.py --cohort icu_v2.parquet",
+                  "expectedOutput": "[INFO] Loaded 142,890 patient observations across 48 clinical features.\n[INFO] Model Validation ROC-AUC: 0.9412 | PR-AUC: 0.8974\n[SHAP] Top Features:\n  1. Troponin_I_Delta (+0.42 log-odds)\n  2. Lactate_Clearance (-0.31 log-odds)\n  3. MAP_Shock_Index   (+0.28 log-odds)\n[+] Model exported to ONNX format.",
+                  "typingSpeedMs": 30
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "course-networking-arch",
+    "slug": "mastering-modern-networking-protocol-engineering",
+    "title": "Mastering Modern Networking & Protocol Engineering",
+    "category": "NETWORKING",
+    "description": "Deep dive into BGP route propagation, TCP congestion algorithms (BBR/CUBIC), QUIC/HTTP3 multiplexing, and eBPF kernel network filters.",
+    "difficulty": "Intermediate",
+    "thumbnail_url": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=800&q=80",
+    "price": 89.99,
+    "instructor_name": "Marcus Vance",
+    "stats": {
+      "modules": 3,
+      "estimatedHours": 24,
+      "interactiveLabs": 12
+    },
+    "skills": ["BGP Route Leak Protection", "eBPF/XDP Filters", "QUIC Flow Control", "TCP BBR v3", "VXLAN Overlay Networks"],
+    "modules": [
+      {
+        "id": "module-net-1",
+        "title": "Module 1: eBPF & High-Speed XDP Packet Filtering",
+        "bypassFee": 2.99,
+        "lessons": [
+          {
+            "id": "lesson-net-1",
+            "metadata": {
+              "courseName": "Mastering Modern Networking & Protocol Engineering",
+              "moduleName": "Module 1: eBPF & High-Speed XDP Packet Filtering",
+              "lessonTitle": "XDP Drop Filters at 100Gbps Line Rate",
+              "difficulty": "Intermediate"
+            },
+            "blocks": [
+              {
+                "id": "block-net-1",
+                "type": "markdown",
+                "data": {
+                  "content": "### Express Data Path (XDP)\nXDP executes eBPF bytecode in driver space before allocating Linux `sk_buff` structures, enabling mitigation of DDoS attacks at wire-speed line rates (over 20 million packets per second)."
+                }
+              },
+              {
+                "id": "block-net-2",
+                "type": "code_stepper",
+                "data": {
+                  "script": "#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n\nSEC(\"xdp\")\nint xdp_drop_syn_flood(struct xdp_md *ctx) {\n    void *data = (void *)(long)ctx->data;\n    void *data_end = (void *)(long)ctx->data_end;\n    \n    // Verify Ethernet & IP headers within packet bounds\n    struct ethhdr *eth = data;\n    if ((void *)(eth + 1) > data_end) return XDP_PASS;\n    \n    return XDP_DROP;\n}\nchar _license[] SEC(\"license\") = \"GPL\";",
+                  "language": "c",
+                  "steps": [
+                    { "lines": [4], "tooltip": "SEC('xdp') hook informs the kernel verifier this program attaches directly to the NIC driver hook." },
+                    { "lines": [9, 10], "tooltip": "Mandatory boundary check to guarantee no out-of-bounds pointer dereference." },
+                    { "lines": [12], "tooltip": "XDP_DROP discards malicious packet directly inside DMA ring buffer without OS CPU allocation." }
+                  ]
+                }
+              },
+              {
+                "id": "block-net-3",
+                "type": "terminal_animation",
+                "data": {
+                  "command": "clang -O2 -target bpf -c xdp_filter.c -o xdp_filter.o && ip link set dev eth0 xdpgeneric obj xdp_filter.o sec xdp",
+                  "expectedOutput": "[+] eBPF program verified and loaded in 1.4ms (Insns: 42, Max stack: 0B)\n[+] Attached XDP program (ID: 184) to eth0\n[+] Live Telemetry: 14.82 Mpps processed | 12.10 Mpps dropped | CPU utilization: 4.2%",
+                  "typingSpeedMs": 30
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "course-web-distributed",
+    "slug": "distributed-systems-microfrontends",
+    "title": "Distributed Web Architecture & High-Concurrency Systems",
+    "category": "WEB_DEVELOPMENT",
+    "description": "Architect globally distributed web platforms using Next.js App Router, edge workers, distributed transactional locks, and event-driven microfrontends.",
+    "difficulty": "Advanced",
+    "thumbnail_url": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80",
+    "price": 109.99,
+    "instructor_name": "Elena Rostova",
+    "stats": {
+      "modules": 4,
+      "estimatedHours": 30,
+      "interactiveLabs": 16
+    },
+    "skills": ["Distributed Mutex (Redis Redlock)", "Event-Driven CQRS", "Next.js Edge Runtime", "WebSockets / SSE", "Optimistic State Machines"],
+    "modules": [
+      {
+        "id": "module-web-1",
+        "title": "Module 1: Distributed Locking with Redlock Algorithm",
+        "bypassFee": 2.99,
+        "lessons": [
+          {
+            "id": "lesson-web-1",
+            "metadata": {
+              "courseName": "Distributed Web Architecture & High-Concurrency Systems",
+              "moduleName": "Module 1: Distributed Locking with Redlock Algorithm",
+              "lessonTitle": "Fault-Tolerant Distributed Locks with Redis",
+              "difficulty": "Advanced"
+            },
+            "blocks": [
+              {
+                "id": "block-web-1",
+                "type": "markdown",
+                "data": {
+                  "content": "### Distributed Mutex & Concurrency Controls\nWhen running multi-instance backend containers, local in-memory locks fail. The Redlock algorithm guarantees mutual exclusion across $N$ independent Redis nodes even under network partitions and node crashes."
+                }
+              },
+              {
+                "id": "block-web-2",
+                "type": "code_stepper",
+                "data": {
+                  "script": "import Redlock from 'redlock';\nimport { redisCluster } from './redis';\n\nconst redlock = new Redlock(redisCluster, {\n  driftFactor: 0.01,\n  retryCount: 10,\n  retryDelay: 200,\n});\n\nexport async function processSeatReservation(seatId: string, userId: string) {\n  // Acquire lock with 5000ms TTL\n  const lock = await redlock.acquire([`locks:seat:${seatId}`], 5000);\n  try {\n    await db.booking.create({ data: { seatId, userId } });\n  } finally {\n    await lock.release();\n  }\n}",
+                  "language": "javascript",
+                  "steps": [
+                    { "lines": [4, 5, 6], "tooltip": "Configure drift factor and exponential jittered retries." },
+                    { "lines": [11], "tooltip": "Acquire distributed lock key with automatic TTL to prevent deadlocks." },
+                    { "lines": [15], "tooltip": "Safely release lock in finally block to ensure lock availability." }
+                  ]
+                }
+              },
+              {
+                "id": "block-web-3",
+                "type": "terminal_animation",
+                "data": {
+                  "command": "k6 run --vus 500 --duration 30s load_test_reservations.js",
+                  "expectedOutput": "     ✓ status is 200 (100%)\n     ✓ race condition violations: 0\n\n     checks.........................: 100.00% ✓ 15200     ✗ 0\n     http_req_duration..............: avg=18.4ms min=2.1ms med=14.2ms max=82.1ms p(95)=31.4ms\n     http_reqs......................: 15200 (506.6/s)",
+                  "typingSpeedMs": 30
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,170 @@
+.overview-page {
+  padding: 2rem 5%;
+  min-height: 80vh;
+}
+
+.overview-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 2rem;
+  transition: color 0.3s ease;
+}
+
+.back-link:hover {
+  color: var(--text-primary);
+}
+
+.overview-header {
+  display: flex;
+  gap: 3rem;
+  padding: 3rem;
+  margin-bottom: 3rem;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(14,165,233,0.05) 100%);
+}
+
+.overview-title-section {
+  flex: 2;
+}
+
+.course-badge {
+  display: inline-block;
+  background: rgba(14, 165, 233, 0.2);
+  color: var(--accent-blue);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.overview-title-section h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.overview-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.overview-meta {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.instructor {
+  font-size: 1.1rem;
+}
+
+.enrollment-card {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.price {
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+.enroll-btn {
+  width: 100%;
+  font-size: 1.2rem;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.guarantee {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.overview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.content-section {
+  padding: 2.5rem;
+}
+
+.content-section h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--accent-orange);
+}
+
+.syllabus-list, .requirements-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.syllabus-list li {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 1.1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.syllabus-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.week-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(14, 165, 233, 0.2);
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.requirements-list li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+  .overview-header {
+    flex-direction: column;
+  }
+}

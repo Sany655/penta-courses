@@ -1,0 +1,87 @@
+.terminal-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: 'Share Tech Mono', 'Courier New', Courier, monospace;
+}
+
+.terminal-header {
+  background: #1e1e1e;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #333;
+}
+
+.mac-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.mac-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.mac-btn.close { background: #ff5f56; }
+.mac-btn.min { background: #ffbd2e; }
+.mac-btn.max { background: #27c93f; }
+
+.terminal-title {
+  flex: 1;
+  text-align: center;
+  color: #888;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-right: 44px; /* to balance mac-btns */
+}
+
+.terminal-body {
+  flex: 1;
+  background: #0d0d0d;
+  padding: 20px;
+  overflow-y: auto;
+  color: #d4d4d4;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.log-line {
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+}
+
+.log-line.system {
+  color: #8b5cf6;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.log-line.output {
+  color: #38bdf8;
+  margin-bottom: 1rem;
+}
+
+.prompt {
+  color: #10b981;
+  margin-right: 8px;
+}
+
+.input-line {
+  display: flex;
+  align-items: center;
+}
+
+.input-line input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+}
