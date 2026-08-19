@@ -48,22 +48,22 @@ export const FAQSection = () => {
         
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-mono font-bold shadow-sm">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold shadow-sm">
             <HelpCircle className="w-3.5 h-3.5" />
             <span>PENTABRID KNOWLEDGE BASE</span>
           </div>
 
-          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
             Frequently Asked Questions
           </h2>
           
-          <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base">
+          <p className="text-slate-400 text-sm md:text-base">
             Everything you need to know about the platform, curriculum methodology, and the{' '}
             <a 
               href="https://pentabrid.com/" 
               target="_blank" 
               rel="noreferrer" 
-              className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline inline-flex items-center gap-1"
+              className="text-emerald-400 font-bold hover:underline inline-flex items-center gap-1"
             >
               official Pentabrid ecosystem <ExternalLink className="w-3 h-3" />
             </a>.
@@ -80,7 +80,7 @@ export const FAQSection = () => {
                 className={`bg-[#090d16] border rounded-2xl transition-all duration-200 overflow-hidden shadow-md ${
                   isOpen 
                     ? 'border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]' 
-                    : 'border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
+                    : 'border-slate-800/80 hover:border-slate-700'
                 }`}
               >
                 <button
@@ -88,18 +88,18 @@ export const FAQSection = () => {
                   className="w-full p-6 text-left flex items-center justify-between gap-4 transition"
                 >
                   <div className="space-y-1">
-                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
                       {faq.category}
                     </span>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug">
+                    <h3 className="text-base sm:text-lg font-bold text-white leading-snug">
                       {faq.question}
                     </h3>
                   </div>
 
                   <div className={`p-2 rounded-xl border shrink-0 transition-transform duration-200 ${
                     isOpen 
-                      ? 'rotate-180 bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
-                      : 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'
+                      ? 'rotate-180 bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                      : 'bg-slate-900 border-slate-800 text-slate-400'
                   }`}>
                     <ChevronDown className="w-4 h-4" />
                   </div>
@@ -113,7 +113,7 @@ export const FAQSection = () => {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.25, ease: 'easeInOut' }}
                     >
-                      <div className="px-6 pb-6 pt-2 text-slate-600 dark:text-slate-300 text-sm leading-relaxed border-t border-slate-100 dark:border-slate-800/50 font-normal">
+                      <div className="px-6 pb-6 pt-2 text-slate-300 text-sm leading-relaxed border-t border-slate-800/50 font-normal">
                         {faq.answer}
                       </div>
                     </motion.div>
@@ -126,10 +126,10 @@ export const FAQSection = () => {
 
         {/* Support Callout */}
         <div className="mt-12 p-6 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
-          <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+          <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wide">
             Have a custom requirement?
           </div>
-          <p className="text-slate-700 dark:text-slate-300 text-sm">
+          <p className="text-slate-300 text-sm">
             Need dedicated mentoring or custom lab environments? Drop a message below and our technical leads at Pentabrid will reach out.
           </p>
         </div>

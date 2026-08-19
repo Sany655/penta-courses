@@ -58,16 +58,16 @@ const Hero = () => {
           {/* Left Column: High Converting Copy */}
           <div className="lg:col-span-7 space-y-6 text-left">
             <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_#10b981]" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#10b981]" />
               <span>PENTABRID ENGINE v3.4 — DISTRIBUTED LEARNING FOR ELITE DEVS</span>
             </div>
 
             <h1 
-              className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.1]"
+              className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.1]"
               dangerouslySetInnerHTML={{ __html: renderTitle }}
             />
 
-            {/* Dynamic CLI Subheadline - Sleek Dark Console in Both Modes for Maximum Readability */}
+            {/* Dynamic CLI Subheadline - Dedicated Sleek Dark Console */}
             <div className="bg-[#0b0f19] border border-slate-800 rounded-xl p-3.5 font-mono text-xs md:text-sm text-slate-200 flex items-center space-x-3 shadow-xl">
               <span className="text-emerald-400 font-bold">$</span>
               <span className="text-cyan-300 font-medium">{terminalText}</span>
@@ -78,7 +78,7 @@ const Hero = () => {
               />
             </div>
 
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl font-normal">
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl font-normal">
               Zero video filler. Master technical domains through live auto-typing terminals, step-by-step code execution steppers, network packet simulators, and strict gatekeeper tests.
             </p>
 
@@ -94,31 +94,31 @@ const Hero = () => {
 
               <button
                 onClick={() => navigate('/admin')}
-                className="px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/90 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-sm transition flex items-center gap-2"
+                className="px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-sm transition flex items-center gap-2"
               >
-                <Sparkles className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                <Sparkles className="w-4 h-4 text-cyan-400" />
                 <span>AI Admin Studio</span>
               </button>
             </div>
 
             {/* Live Stats */}
-            <div className="pt-8 grid grid-cols-3 gap-4 border-t border-slate-200 dark:border-slate-800/80 font-mono text-xs">
+            <div className="pt-8 grid grid-cols-3 gap-4 border-t border-slate-800/80 font-mono text-xs">
               <div>
-                <div className="text-xl font-bold text-slate-900 dark:text-white">4 Tracks</div>
-                <div className="text-slate-600 dark:text-slate-400 font-medium">Web, Net, Cyber, ML</div>
+                <div className="text-xl font-bold text-white">4 Tracks</div>
+                <div className="text-slate-400 font-medium">Web, Net, Cyber, ML</div>
               </div>
               <div>
-                <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">100% Code</div>
-                <div className="text-slate-600 dark:text-slate-400 font-medium">Zero Fluff Video</div>
+                <div className="text-xl font-bold text-emerald-400">100% Code</div>
+                <div className="text-slate-400 font-medium">Zero Fluff Video</div>
               </div>
               <div>
-                <div className="text-xl font-bold text-cyan-600 dark:text-cyan-400">&lt;2.4s</div>
-                <div className="text-slate-600 dark:text-slate-400 font-medium">Sub-Second Execution</div>
+                <div className="text-xl font-bold text-cyan-400">&lt;2.4s</div>
+                <div className="text-slate-400 font-medium">Sub-Second Execution</div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Cyber HUD Graphic (Styled with High Contrast in Both Modes) */}
+          {/* Right Column: Cyber HUD Graphic */}
           <div className="lg:col-span-5 relative">
             <div className="bg-[#070b14] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 relative overflow-hidden text-slate-200">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
