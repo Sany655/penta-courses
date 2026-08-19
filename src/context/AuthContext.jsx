@@ -88,6 +88,33 @@ export const AuthProvider = ({ children }) => {
     ];
   });
 
+  // Contact / Suggestions / Custom Track Inquiries
+  const [inquiries, setInquiries] = useState(() => {
+    const saved = localStorage.getItem('penta_inquiries');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'inq_01',
+        name: 'Tariq Mahmud',
+        email: 'tariq@fintech-labs.io',
+        company: 'Fintech Labs BD',
+        category: 'Enterprise Custom Track',
+        message: 'We want to license Pentabrid Engine for our internal 25-person security engineering team. Can we customize the eBPF networking and C2 bypass modules for our banking threat model?',
+        timestamp: new Date(Date.now() - 3600000 * 5).toLocaleString(),
+        status: 'NEW'
+      },
+      {
+        id: 'inq_02',
+        name: 'Sara Chen',
+        email: 'sara.chen@ai-biomed.org',
+        company: 'BioMed Research',
+        category: 'Curriculum Suggestion',
+        message: 'Could you add an interactive lab focusing on Graph Neural Networks (GNNs) for molecular property prediction in the Predictive ML track?',
+        timestamp: new Date(Date.now() - 3600000 * 18).toLocaleString(),
+        status: 'REVIEWED'
+      }
+    ];
+  });
+
   // Persistent granted access dictionary: { [email]: string[] }
   const [grantedAccessMap, setGrantedAccessMap] = useState(() => {
     const saved = localStorage.getItem('penta_granted_access');
@@ -117,6 +144,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('penta_bkash_txns', JSON.stringify(transactions));
   }, [transactions]);
+
+  useEffect(() => {
+    localStorage.setItem('penta_inquiries', JSON.stringify(inquiries));
+  }, [inquiries]);
 
   useEffect(() => {
     localStorage.setItem('penta_granted_access', JSON.stringify(grantedAccessMap));
@@ -232,6 +263,31 @@ export const AuthProvider = ({ children }) => {
 
   const updateBkashSettings = (newSettings) => {
     setBkashSettings(prev => ({ ...prev, ...newSettings }));
+  };
+
+  // Submit Suggestion / Contact Request
+  const submitInquiry = ({ name, email, company, category, message }) => {
+    const newInquiry = {
+      id: `inq_${Date.now()}`,
+      name: name.trim(),
+      email: email.trim(),
+      company: (company || 'Independent Practitioner').trim(),
+      category: category || 'Curriculum Suggestion',
+      message: message.trim(),
+      timestamp: new Date().toLocaleString(),
+      status: 'NEW'
+    };
+
+    setInquiries(prev => [newInquiry, ...prev]);
+    return { success: true, inquiry: newInquiry };
+  };
+
+  const updateInquiryStatus = (id, newStatus) => {
+    setInquiries(prev => prev.map(inq => inq.id === id ? { ...inq, status: newStatus } : inq));
+  };
+
+  const deleteInquiry = (id) => {
+    setInquiries(prev => prev.filter(inq => inq.id !== id));
   };
 
   // Student submits payment -> status is PENDING (No automatic unlock)
@@ -390,6 +446,10 @@ export const AuthProvider = ({ children }) => {
       rejectTransaction,
       manualGrantAccess,
       deleteTransaction,
+      inquiries,
+      submitInquiry,
+      updateInquiryStatus,
+      deleteInquiry,
       unlockNextModule,
       bypassModuleWithPayment,
       recordQuizSuccess,

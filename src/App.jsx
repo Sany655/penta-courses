@@ -9,7 +9,7 @@ import { AuthProvider, useAuth, ROLES } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { 
   Terminal, Shield, Sparkles, User, ChevronDown, 
-  Sun, Moon, LogOut, BookOpen, UserCheck, LayoutDashboard 
+  Sun, Moon, LogOut, BookOpen, UserCheck, LayoutDashboard, ExternalLink 
 } from 'lucide-react';
 import './App.css';
 
@@ -53,8 +53,19 @@ function NavigationBar() {
       </div>
 
       {/* Navigation Links */}
-      <div className="hidden md:flex items-center space-x-8 text-xs font-mono font-medium text-slate-700 dark:text-slate-400">
+      <div className="hidden md:flex items-center space-x-6 text-xs font-mono font-medium text-slate-700 dark:text-slate-400">
         <a href="/#courses" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Curriculum Tracks</a>
+        <a href="/#faq" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">FAQ</a>
+        <a href="/#contact" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Custom Tracks</a>
+        <a 
+          href="https://pentabrid.com/" 
+          target="_blank" 
+          rel="noreferrer" 
+          className="hover:text-cyan-600 dark:hover:text-cyan-400 transition flex items-center gap-1"
+        >
+          <span>Pentabrid.com</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
         
         {isAdmin && (
           <Link to="/admin" className="text-cyan-700 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-300 transition flex items-center gap-1.5 font-bold">
@@ -188,12 +199,21 @@ function App() {
                 <Route path="/admin/*" element={<AdminDashboard />} />
               </Routes>
             </div>
-            <footer className="py-8 bg-[#030508] border-t border-slate-200 dark:border-slate-900 text-center text-xs font-mono text-slate-600 dark:text-slate-400 transition-colors">
-              <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>© 2026 Pentabrid Technical Engine. Architectural RBAC & Telemetry Labs.</div>
-                <div className="flex space-x-4 font-medium">
-                  <span className="text-emerald-600 dark:text-emerald-400">● 4 Node Clusters Online</span>
-                  <span>MySQL + Prisma Engine</span>
+            <footer className="py-10 bg-[#030508] border-t border-slate-200 dark:border-slate-900 text-xs font-mono text-slate-600 dark:text-slate-400 transition-colors">
+              <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <span className="font-bold text-slate-900 dark:text-white">Pentabrid Engine</span>
+                  <span className="hidden sm:inline text-slate-400">&bull;</span>
+                  <span>An Official Education Platform of <a href="https://pentabrid.com/" target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">Pentabrid</a></span>
+                </div>
+                <div className="flex items-center space-x-6 font-medium">
+                  <a href="/#faq" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">FAQ</a>
+                  <a href="/#contact" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Advisory</a>
+                  <a href="https://pentabrid.com/" target="_blank" rel="noreferrer" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition flex items-center gap-1">
+                    <span>pentabrid.com</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">● 4 Nodes Online</span>
                 </div>
               </div>
             </footer>

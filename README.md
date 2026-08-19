@@ -1,6 +1,6 @@
 # ⚡ Pentabrid Engine (`penta-courses`)
 
-> **The Next-Gen, Interactive Technical eLearning Platform & Curriculum-as-a-Service (CaaS) Engine.**  
+> **The Official Next-Gen Technical eLearning Platform & Curriculum-as-a-Service (CaaS) Engine of [Pentabrid](https://pentabrid.com/).**  
 > Dedicated to mission-critical software engineering, kernel networking, offensive cybersecurity, and clinical predictive modeling.
 
 [![Next.js](https://img.shields.io/badge/Next.js_14+-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
@@ -15,7 +15,7 @@
 
 ## 🎯 Executive Overview
 
-Traditional video-based eLearning fails for complex, low-level technical disciplines. **Pentabrid Engine** eliminates passive video filler in favor of **active execution**: auto-typing CLI sandbox simulations, line-by-line interactive code execution steppers, visual packet-flow analyzers, and strict gatekeeper assessments with microtransaction unlocks.
+Traditional video-based eLearning fails for complex, low-level technical disciplines. **Pentabrid Engine** — the official education platform of [Pentabrid](https://pentabrid.com/) — eliminates passive video filler in favor of **active execution**: auto-typing CLI sandbox simulations, line-by-line interactive code execution steppers, visual packet-flow analyzers, and strict gatekeeper assessments with microtransaction unlocks.
 
 Designed both as a **stand-alone learning destination** and a **white-label Marketing-as-a-Service (MaaS) EdTech platform**, Pentabrid allows developer tooling companies, enterprise security firms, and AI labs to build high-converting curriculum pipelines with embedded AI synthesis.
 
@@ -33,18 +33,19 @@ Designed both as a **stand-alone learning destination** and a **white-label Mark
 ┌──────────────┐ ┌──────────────┐                 ┌──────────────┐   ┌──────────────┐
 │  PILLAR 1:   │ │  PILLAR 2:   │                 │  PILLAR 3:   │   │  PILLAR 4:   │
 │ High-Convert │ │ Strict RBAC  │                 │ Interactive  │   │  AI Admin    │
-│ Dark-Mode    │ │ & Data       │                 │ Split-Screen │   │  Block CMS   │
-│ Marketing    │ │ Isolation    │                 │ Workspace    │   │  & Staging   │
+│ Marketing,   │ │ & Data       │                 │ Split-Screen │   │  Studio &    │
+│ FAQ & Portal │ │ Isolation    │                 │ Workspace    │   │  Advisory    │
 └──────────────┘ └──────────────┘                 └──────────────┘   └──────────────┘
 ```
 
-### 1. 🚀 High-Converting Marketing & Landing Engine
+### 1. 🚀 High-Converting Marketing, FAQ & Inquiries Portal
 * **Aesthetic & Dual Theming**: Obsidian dark mode (`#05070a`) and crisp white light mode (`#f8fafc`) with dynamic ambient grid lines, high-contrast typography, and instant persistent theme toggle.
 * **Hero Experience**: Real-time terminal typing subheadline cycling live CLI commands across all technical tracks.
 * **Dynamic Content Control**: Real-time toggling and updating of hero headlines and technical commands directly via the Admin Studio.
 * **Curriculum Catalog**: Dynamic track badges showing difficulty indices, estimated hours, lock/unlock states, and prerequisite dependency graphs.
+* **FAQ Knowledge Base**: Comprehensive accordion covering Pentabrid ecosystem integration (`https://pentabrid.com`), zero-video methodology, and enterprise licensing.
+* **Contact & Suggestion Gateway**: Direct advisory form where engineers and team leads can request custom enterprise tracks and propose new curriculum topics that sync straight to the Admin Studio.
 * **Practitioner Social Proof**: Real-world validation from Senior Security Engineers, Staff ML Architects, and Infrastructure Leads.
-* **Interactive Skills Telemetry**: Live graphical capability bars mapping verified mastery percentages.
 
 ---
 

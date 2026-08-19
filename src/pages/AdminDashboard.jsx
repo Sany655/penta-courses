@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Shield, Sparkles, LayoutDashboard, Settings, Lock, 
   FileCode2, Smartphone, CreditCard, Trash2, CheckCircle2, 
-  Search, ExternalLink, RefreshCw, XCircle, UserCheck, Plus, Check 
+  Search, ExternalLink, RefreshCw, XCircle, UserCheck, Plus, Check,
+  MessageSquare, Mail, Building2, Clock, CheckCheck, Archive 
 } from 'lucide-react';
 import LessonBuilder from '../components/admin/LessonBuilder';
 import { useAuth } from '../context/AuthContext';
@@ -11,8 +12,10 @@ import coursesData from '../data/courses.json';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('lesson-builder');
-  const { isAdmin } = useAuth();
+  const { isAdmin, inquiries } = useAuth();
   const navigate = useNavigate();
+
+  const newInquiriesCount = (inquiries || []).filter(i => i.status === 'NEW').length;
 
   // If not admin, redirect to auth
   React.useEffect(() => {
@@ -24,7 +27,7 @@ const AdminDashboard = () => {
   if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-[#05070a] pt-16 flex font-sans">
+    <div className="min-h-screen bg-[#05070a] pt-16 flex font-sans transition-colors">
       {/* Sidebar Navigation */}
       <aside className="w-64 border-r border-slate-800 bg-[#090d16] hidden md:flex flex-col">
         <div className="p-6 border-b border-slate-800">
@@ -61,6 +64,25 @@ const AdminDashboard = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab('inquiries-manager')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+              activeTab === 'inquiries-manager'
+                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-4 h-4" />
+              <span>Inquiries & Requests</span>
+            </div>
+            {newInquiriesCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] font-mono">
+                {newInquiriesCount}
+              </span>
+            )}
+          </button>
+
+          <button
             onClick={() => setActiveTab('bkash-payments')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
               activeTab === 'bkash-payments'
@@ -90,9 +112,181 @@ const AdminDashboard = () => {
       <main className="flex-1 overflow-auto bg-[#05070a]">
         {activeTab === 'lesson-builder' && <LessonBuilder />}
         {activeTab === 'site-settings' && <SiteSettings />}
+        {activeTab === 'inquiries-manager' && <InquiriesManager />}
         {activeTab === 'bkash-payments' && <BkashPaymentSettings />}
         {activeTab === 'security-settings' && <SecuritySettings />}
       </main>
+    </div>
+  );
+};
+
+const InquiriesManager = () => {
+  const { inquiries, updateInquiryStatus, deleteInquiry } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+
+  const filteredInquiries = (inquiries || []).filter(inq => {
+    const matchesSearch = 
+      inq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inq.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inq.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inq.category.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (filterStatus === 'ALL') return matchesSearch;
+    return matchesSearch && inq.status === filterStatus;
+  });
+
+  return (
+    <div className="max-w-6xl mx-auto p-8 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <MessageSquare className="text-amber-400" />
+            <span>Advisory Inquiries & Custom Track Requests</span>
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-mono mt-1">
+            Incoming suggestions and enterprise requests submitted from the landing page contact gateway.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            className="bg-[#090d16] border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none"
+          >
+            <option value="ALL">All Statuses ({inquiries?.length || 0})</option>
+            <option value="NEW">New ({(inquiries || []).filter(i => i.status === 'NEW').length})</option>
+            <option value="REVIEWED">Reviewed ({(inquiries || []).filter(i => i.status === 'REVIEWED').length})</option>
+            <option value="ARCHIVED">Archived ({(inquiries || []).filter(i => i.status === 'ARCHIVED').length})</option>
+          </select>
+
+          <div className="relative w-56">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Search inquiries..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-[#090d16] border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none font-mono"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Inquiries Cards Grid */}
+      {filteredInquiries.length === 0 ? (
+        <div className="py-16 text-center text-slate-500 font-mono text-xs border border-dashed border-slate-800 rounded-2xl bg-[#090d16]/40">
+          No advisory inquiries match your search criteria.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredInquiries.map((inq) => {
+            const isNew = inq.status === 'NEW';
+            const isReviewed = inq.status === 'REVIEWED';
+
+            return (
+              <div
+                key={inq.id}
+                className={`bg-[#090d16] border rounded-2xl p-6 space-y-4 shadow-xl transition-all ${
+                  isNew 
+                    ? 'border-amber-500/40 bg-amber-500/5' 
+                    : 'border-slate-800/80 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold flex items-center justify-center text-xs font-mono">
+                      {inq.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-100 text-sm flex items-center gap-2">
+                        <span>{inq.name}</span>
+                        {inq.company && (
+                          <span className="text-[11px] font-mono text-slate-400 font-normal">
+                            &bull; {inq.company}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-slate-400 text-xs font-mono">{inq.email}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[11px] font-mono font-bold">
+                      {inq.category}
+                    </span>
+
+                    {isNew && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-bold animate-pulse">
+                        ● New Inquiry
+                      </span>
+                    )}
+
+                    {isReviewed && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                        ✓ Reviewed
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Message Body */}
+                <p className="text-slate-300 text-xs md:text-sm leading-relaxed whitespace-pre-wrap font-sans bg-[#05070a] p-4 rounded-xl border border-slate-800/80">
+                  {inq.message}
+                </p>
+
+                {/* Action Bar */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs font-mono text-slate-400 gap-3 pt-1">
+                  <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Received: {inq.timestamp}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <a
+                      href={`mailto:${inq.email}?subject=Re: ${encodeURIComponent(inq.category)} - Pentabrid Engine&body=Hi ${encodeURIComponent(inq.name)},%0D%0A%0D%0AThank you for reaching out regarding ${encodeURIComponent(inq.category)} on Pentabrid Engine...`}
+                      className="px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-bold transition flex items-center gap-1.5"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Reply via Email</span>
+                    </a>
+
+                    {isNew ? (
+                      <button
+                        onClick={() => updateInquiryStatus(inq.id, 'REVIEWED')}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold transition flex items-center gap-1.5"
+                      >
+                        <CheckCheck className="w-3.5 h-3.5" />
+                        <span>Mark as Reviewed</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => updateInquiryStatus(inq.id, 'NEW')}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-medium transition"
+                      >
+                        Mark as New
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        if (confirm(`Delete inquiry from ${inq.name}?`)) {
+                          deleteInquiry(inq.id);
+                        }
+                      }}
+                      className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition"
+                      title="Delete inquiry"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
