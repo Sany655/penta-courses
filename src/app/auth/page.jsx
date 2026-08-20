@@ -1,7 +1,11 @@
+"use client";
+
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Lock, Mail, User, Shield, ArrowRight, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
-import { useAuth, ROLES } from '../context/AuthContext';
+import { signIn } from 'next-auth/react';
+import { ROLES } from '../../context/AuthContext';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,43 +15,60 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   
-  const navigate = useNavigate();
-  const { login, register, user, adminEmail } = useAuth();
+  const router = useRouter();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
 
     if (isLogin) {
-      const res = login(email, password);
-      if (res.success) {
-        if (res.role === ROLES.ADMIN) {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+      const res = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (res?.error) {
+        setError(res.error);
       } else {
-        setError(res.message || 'Invalid email or password.');
+        router.push('/');
+        router.refresh();
       }
     } else {
       if (!name.trim()) {
         setError('Please enter your full name.');
         return;
       }
-      const res = register(name, email, password);
-      if (res.success) {
-        setSuccessMsg('Account registered successfully! Redirecting...');
-        setTimeout(() => navigate('/'), 1200);
-      } else {
-        setError(res.message || 'Registration failed.');
+      
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          setSuccessMsg('Account registered successfully! Redirecting...');
+          // Auto login after register
+          await signIn('credentials', { redirect: false, email, password });
+          setTimeout(() => {
+            router.push('/');
+            router.refresh();
+          }, 1200);
+        } else {
+          setError(data.message || 'Registration failed.');
+        }
+      } catch (err) {
+        setError('Network error occurred.');
       }
     }
   };
 
   const handleQuickFill = (type) => {
     if (type === 'admin') {
-      setEmail(adminEmail || 'admin@pentabrid.com');
+      setEmail('admin@pentabrid.com');
       setPassword('Password');
       setIsLogin(true);
     } else {

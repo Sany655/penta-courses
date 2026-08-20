@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { 
   ShieldAlert, Cpu, Network, Globe, Clock, 
   BarChart3, Lock, Unlock, ArrowRight, Zap, CheckCircle 
@@ -115,7 +115,7 @@ const CourseGrid = () => {
                   </div>
 
                   <Link
-                    to={firstLesson ? `/learn/${course.id}/${firstModule.id}/${firstLesson.id}` : `/course/${course.id}/overview`}
+                    href={firstLesson ? `/learn/${course.id}/${firstModule.id}/${firstLesson.id}` : `/course/${course.id}/overview`}
                     className="penta-card-btn inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold font-mono shadow-sm"
                   >
                     <span>{isUnlocked ? 'Enter Lab' : 'Preview Phase'}</span>

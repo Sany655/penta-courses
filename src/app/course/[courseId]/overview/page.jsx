@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+"use client";
+
+import React, { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Clock, Award, CheckCircle, ArrowLeft, Terminal, 
   ShieldCheck, ArrowRight, Lock, BookOpen, Layers, Zap 
 } from 'lucide-react';
-import coursesData from '../data/courses.json';
-import { useAuth } from '../context/AuthContext';
-import { BkashPaymentModal } from '../components/payment/BkashPaymentModal';
+import coursesData from '../../../../data/courses.json';
+import { useAuth } from '../../../../context/AuthContext';
+import { BkashPaymentModal } from '../../../../components/payment/BkashPaymentModal';
 
-const CourseOverview = () => {
-  const navigate = useNavigate();
-  const { courseId } = useParams();
+const CourseOverview = ({ params }) => {
+  const router = useRouter();
+  const { courseId } = use(params);
   const { user, bkashSettings } = useAuth();
   const [course, setCourse] = useState(null);
   const [selectedModuleForPay, setSelectedModuleForPay] = useState(null);
@@ -33,7 +36,7 @@ const CourseOverview = () => {
       <div className="max-w-5xl mx-auto px-6 space-y-10">
         
         {/* Back Link */}
-        <Link to="/#courses" className="inline-flex items-center gap-2 text-xs font-mono text-slate-400 hover:text-emerald-400 transition">
+        <Link href="/#courses" className="inline-flex items-center gap-2 text-xs font-mono text-slate-400 hover:text-emerald-400 transition">
           <ArrowLeft size={14} /> Back to Track Catalog
         </Link>
         
@@ -89,7 +92,7 @@ const CourseOverview = () => {
 
               {firstLesson && (
                 <button
-                  onClick={() => navigate(`/learn/${course.id}/${firstModule.id}/${firstLesson.id}`)}
+                  onClick={() => router.push(`/learn/${course.id}/${firstModule.id}/${firstLesson.id}`)}
                   className="px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center gap-2"
                 >
                   <span>Launch Workspace</span>
@@ -159,7 +162,7 @@ const CourseOverview = () => {
                       <button
                         onClick={() => {
                           if (isUnlocked) {
-                            navigate(`/learn/${course.id}/${mod.id}/${mod.lessons[0].id}`);
+                            router.push(`/learn/${course.id}/${mod.id}/${mod.lessons[0].id}`);
                           } else {
                             setSelectedModuleForPay(mod);
                           }
@@ -222,4 +225,3 @@ const CourseOverview = () => {
 };
 
 export default CourseOverview;
-

@@ -1,27 +1,25 @@
+"use client";
+
 import React, { useState, useRef, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import Home from './pages/Home';
-import Auth from './pages/Auth';
-import CourseOverview from './pages/CourseOverview';
-import LearningWorkspace from './components/student/LearningWorkspace';
-import AdminDashboard from './pages/AdminDashboard';
-import { AuthProvider, useAuth, ROLES } from './context/AuthContext';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth, ROLES } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { signOut } from 'next-auth/react';
 import { 
   Terminal, Shield, Sparkles, User, ChevronDown, 
   Sun, Moon, LogOut, BookOpen, UserCheck, LayoutDashboard, ExternalLink 
 } from 'lucide-react';
-import './App.css';
 
-function NavigationBar() {
-  const { user, logout, isAdmin } = useAuth();
+export default function NavigationBar() {
+  const { user, isAdmin } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const menuRef = useRef(null);
   
-  const isWorkspace = location.pathname.startsWith('/learn');
+  const isWorkspace = pathname && pathname.startsWith('/learn');
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -42,7 +40,7 @@ function NavigationBar() {
     <nav className="penta-navbar fixed top-0 left-0 right-0 h-16 backdrop-blur-md border-b px-6 flex items-center justify-between z-40 transition-colors shadow-md">
       {/* Brand Logo */}
       <div className="flex items-center space-x-3">
-        <Link to="/" className="flex items-center space-x-2 font-mono font-bold text-sm tracking-wide">
+        <Link href="/" className="flex items-center space-x-2 font-mono font-bold text-sm tracking-wide">
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-500 shadow-sm font-bold">
             ▲
           </div>
@@ -70,7 +68,7 @@ function NavigationBar() {
         
         {isAdmin && (
           <Link 
-            to="/admin" 
+            href="/admin" 
             className="text-cyan-300 hover:text-cyan-200 transition flex items-center gap-1.5 font-bold bg-cyan-500/20 px-3 py-1.5 rounded-xl border border-cyan-500/40 shadow-sm"
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
@@ -134,7 +132,7 @@ function NavigationBar() {
 
                 {isAdmin && (
                   <Link
-                    to="/admin"
+                    href="/admin"
                     onClick={() => setShowProfileMenu(false)}
                     className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-cyan-400 hover:bg-slate-800/80 transition font-medium font-mono"
                   >
@@ -155,8 +153,8 @@ function NavigationBar() {
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);
-                    logout();
-                    navigate('/auth');
+                    signOut();
+                    router.push('/auth');
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition font-medium text-left border-t border-slate-800/60 mt-1"
                 >
@@ -169,13 +167,13 @@ function NavigationBar() {
         ) : (
           <div className="flex items-center gap-3">
             <Link
-              to="/auth"
+              href="/auth"
               className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-slate-200 hover:text-white transition"
             >
               Sign In
             </Link>
             <Link
-              to="/auth"
+              href="/auth"
               className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono transition shadow-sm"
             >
               Get Started
@@ -186,46 +184,3 @@ function NavigationBar() {
     </nav>
   );
 }
-
-function App() {
-  return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <div className="min-h-screen bg-[#05070a] text-slate-100 flex flex-col font-sans transition-colors">
-            <NavigationBar />
-            <div className="flex-1">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/course/:courseId/overview" element={<CourseOverview />} />
-                <Route path="/learn/:courseId/:moduleId/:lessonId" element={<LearningWorkspace />} />
-                <Route path="/admin/*" element={<AdminDashboard />} />
-              </Routes>
-            </div>
-            <footer className="py-10 bg-[#030508] border-t border-slate-900 text-xs font-mono text-slate-400 transition-colors">
-              <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                  <span className="font-bold text-white">Pentabrid Engine</span>
-                  <span className="hidden sm:inline text-slate-600">&bull;</span>
-                  <span>An Official Education Platform of <a href="https://pentabrid.com/" target="_blank" rel="noreferrer" className="text-emerald-400 font-bold hover:underline">Pentabrid</a></span>
-                </div>
-                <div className="flex items-center space-x-6 font-medium">
-                  <a href="/#faq" className="hover:text-emerald-400 transition">FAQ</a>
-                  <a href="/#contact" className="hover:text-emerald-400 transition">Advisory</a>
-                  <a href="https://pentabrid.com/" target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition flex items-center gap-1">
-                    <span>pentabrid.com</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                  <span className="text-emerald-400 font-bold">● 4 Nodes Online</span>
-                </div>
-              </div>
-            </footer>
-          </div>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
-  );
-}
-
-export default App;

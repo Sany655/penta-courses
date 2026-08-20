@@ -4,8 +4,10 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('penta_theme');
-    if (saved) return saved;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('penta_theme');
+      if (saved) return saved;
+    }
     // Default to dark mode
     return 'dark';
   });

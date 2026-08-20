@@ -5,7 +5,7 @@ import {
   Smartphone, ShieldCheck, ArrowRight, Zap, X, Lock, Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 export const BkashPaymentModal = ({
   isOpen,
@@ -209,7 +209,7 @@ export const BkashPaymentModal = ({
                     <span>Please log in to tie payment to your account.</span>
                   </div>
                   <Link
-                    to="/auth"
+                    href="/auth"
                     className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition shrink-0"
                   >
                     Login

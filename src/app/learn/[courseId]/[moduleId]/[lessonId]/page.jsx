@@ -1,24 +1,27 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback, use } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   ArrowLeft, CheckCircle2, Lock, Sparkles, Terminal, 
   BookOpen, Layers, ShieldCheck, ChevronRight, ChevronLeft, Zap 
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../../../../context/AuthContext';
+import { useTheme } from '../../../../../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
-import coursesData from '../../data/courses.json';
+import coursesData from '../../../../../data/courses.json';
 import { 
   MarkdownBlock, 
   AnimatedTerminal, 
   CodeStepper, 
   NetworkFlow, 
   QuizGatekeeper 
-} from './BlockRenderers';
+} from '../../../../../components/student/BlockRenderers';
 
-export default function LearningWorkspace() {
-  const { courseId, moduleId, lessonId } = useParams();
-  const navigate = useNavigate();
+export default function LearningWorkspace({ params }) {
+  const { courseId, moduleId, lessonId } = use(params);
+  const router = useRouter();
   const { user, unlockNextModule, bypassModuleWithPayment, recordQuizSuccess } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   
@@ -120,7 +123,7 @@ export default function LearningWorkspace() {
       <header className="h-14 border-b border-slate-800 bg-[#090c13]/90 backdrop-blur-md px-4 flex items-center justify-between z-20 shrink-0">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate(`/course/${course.id}/overview`)}
+            onClick={() => router.push(`/course/${course.id}/overview`)}
             className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition flex items-center gap-1.5 text-xs font-mono"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -183,7 +186,7 @@ export default function LearningWorkspace() {
             <button
               onClick={() => {
                 if (user.unlockedModules.includes(nextModule.id)) {
-                  navigate(`/learn/${course.id}/${nextModule.id}/${nextModule.lessons[0].id}`);
+                  router.push(`/learn/${course.id}/${nextModule.id}/${nextModule.lessons[0].id}`);
                 } else {
                   alert('Phase locked! Pass the Gatekeeper Assessment or Pay Bypass to unlock.');
                 }

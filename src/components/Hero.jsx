@@ -1,5 +1,7 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   Terminal, ShieldCheck, Cpu, ArrowRight, 
@@ -7,15 +9,15 @@ import {
 } from 'lucide-react';
 
 const Hero = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [terminalText, setTerminalText] = useState('');
   const [commandIndex, setCommandIndex] = useState(0);
 
-  const isHidden = localStorage.getItem('penta_hero_hidden') === 'true';
-  const storedTitle = localStorage.getItem('penta_hero_title');
+  const isHidden = typeof window !== 'undefined' ? localStorage.getItem('penta_hero_hidden') === 'true' : false;
+  const storedTitle = typeof window !== 'undefined' ? localStorage.getItem('penta_hero_title') : null;
   const renderTitle = storedTitle || 'Mission-Critical <br /> <span class="text-gradient-emerald">Offensive Cyber</span> & <br /> <span class="text-gradient-cyan">Distributed Architecture</span>';
   
-  const storedCmds = localStorage.getItem('penta_hero_cmds');
+  const storedCmds = typeof window !== 'undefined' ? localStorage.getItem('penta_hero_cmds') : null;
   const commandList = storedCmds 
     ? storedCmds.split(',').map(c => c.trim())
     : [
@@ -93,7 +95,7 @@ const Hero = () => {
               </a>
 
               <button
-                onClick={() => navigate('/admin')}
+                onClick={() => router.push('/admin')}
                 className="px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-sm transition flex items-center gap-2"
               >
                 <Sparkles className="w-4 h-4 text-cyan-400" />

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 const AuthContext = createContext();
 
@@ -8,15 +9,17 @@ export const ROLES = {
 };
 
 export const AuthProvider = ({ children }) => {
-  // Registered student accounts stored in localStorage
+  const { data: session, status } = useSession();
+  const nextAuthUser = session?.user;
+
+  // Registered student accounts stored in localStorage (mock data fallback)
   const [registeredUsers, setRegisteredUsers] = useState(() => {
-    const saved = localStorage.getItem('penta_registered_students');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_registered_students') : null;
     return saved ? JSON.parse(saved) : [
       {
         id: 'usr_student_01',
         name: 'Alex Mercer',
         email: 'alex.mercer@pentabrid.io',
-        password: 'Password',
         role: ROLES.STUDENT,
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
         unlockedModules: ['module-1'],
@@ -27,32 +30,22 @@ export const AuthProvider = ({ children }) => {
     ];
   });
 
-  // Current session user
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('penta_user');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return null;
-      }
-    }
-    // Default initial student user session
-    return {
-      id: 'usr_student_01',
-      name: 'Alex Mercer',
-      email: 'alex.mercer@pentabrid.io',
-      role: ROLES.STUDENT,
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-      unlockedModules: ['module-1'],
-      bypassedModules: [],
-      pendingModules: [],
-      completedQuizzes: []
-    };
-  });
+  const [user, setUser] = useState(null);
 
+  useEffect(() => {
+    if (nextAuthUser) {
+      // Find extra metadata from mock storage if it exists, otherwise use basic NextAuth data
+      const mockMeta = registeredUsers.find(u => u.email === nextAuthUser.email) || {};
+      setUser({
+        ...mockMeta,
+        ...nextAuthUser,
+      });
+    } else if (status === 'unauthenticated') {
+      setUser(null);
+    }
+  }, [nextAuthUser, status, registeredUsers]);
   const [adminCredentials, setAdminCredentials] = useState(() => {
-    const saved = localStorage.getItem('penta_admin_creds');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_admin_creds') : null;
     return saved ? JSON.parse(saved) : {
       email: 'admin@pentabrid.com',
       password: 'Password'
@@ -60,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   });
 
   const [bkashSettings, setBkashSettings] = useState(() => {
-    const saved = localStorage.getItem('penta_bkash_settings');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_bkash_settings') : null;
     return saved ? JSON.parse(saved) : {
       phoneNumber: '01712-345678',
       accountType: 'Personal',
@@ -70,7 +63,7 @@ export const AuthProvider = ({ children }) => {
   });
 
   const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('penta_bkash_txns');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_bkash_txns') : null;
     return saved ? JSON.parse(saved) : [
       {
         id: 'txn_init_01',
@@ -90,7 +83,7 @@ export const AuthProvider = ({ children }) => {
 
   // Contact / Suggestions / Custom Track Inquiries
   const [inquiries, setInquiries] = useState(() => {
-    const saved = localStorage.getItem('penta_inquiries');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_inquiries') : null;
     return saved ? JSON.parse(saved) : [
       {
         id: 'inq_01',
@@ -117,7 +110,7 @@ export const AuthProvider = ({ children }) => {
 
   // Persistent granted access dictionary: { [email]: string[] }
   const [grantedAccessMap, setGrantedAccessMap] = useState(() => {
-    const saved = localStorage.getItem('penta_granted_access');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_granted_access') : null;
     return saved ? JSON.parse(saved) : {};
   });
 

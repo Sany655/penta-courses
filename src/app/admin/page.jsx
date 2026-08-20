@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { 
   Shield, Sparkles, LayoutDashboard, Settings, Lock, 
@@ -5,24 +7,24 @@ import {
   Search, ExternalLink, RefreshCw, XCircle, UserCheck, Plus, Check,
   MessageSquare, Mail, Building2, Clock, CheckCheck, Archive 
 } from 'lucide-react';
-import LessonBuilder from '../components/admin/LessonBuilder';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import coursesData from '../data/courses.json';
+import LessonBuilder from '../../components/admin/LessonBuilder';
+import { useAuth } from '../../context/AuthContext';
+import { useRouter } from 'next/navigation';
+import coursesData from '../../data/courses.json';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('lesson-builder');
   const { isAdmin, inquiries } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const newInquiriesCount = (inquiries || []).filter(i => i.status === 'NEW').length;
 
   // If not admin, redirect to auth
   React.useEffect(() => {
     if (!isAdmin) {
-      navigate('/auth');
+      router.push('/auth');
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, router]);
 
   if (!isAdmin) return null;
 

@@ -1,5 +1,7 @@
+"use client";
+
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Trash2, ArrowUp, ArrowDown, Save, Eye, Terminal, 
@@ -23,7 +25,7 @@ const blockIcons = {
 };
 
 export default function LessonBuilder() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { user, isStaff } = useAuth();
 
   const [metadata, setMetadata] = useState({
@@ -84,7 +86,7 @@ export default function LessonBuilder() {
             The AI Lesson Studio & Staging Canvas requires <span className="text-emerald-400 font-bold">ADMIN</span> or <span className="text-cyan-400 font-bold">INSTRUCTOR</span> privileges. Your current role is <span className="text-rose-400 font-bold">{user.role}</span>.
           </p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => router.push('/')}
             className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition border border-slate-700"
           >
             Return to Dashboard
@@ -125,64 +127,70 @@ export default function LessonBuilder() {
   };
 
   // Structured AI Lesson Generation (Human-in-the-Loop)
-  const handleGenerateWithAI = () => {
+  const handleGenerateWithAI = async () => {
     if (!llmPrompt.trim()) return;
     setIsGenerating(true);
 
-    setTimeout(() => {
-      // High-precision structured schema simulation conforming to schema
-      const generatedBlocks = [
-        {
-          id: `ai-1-${Date.now()}`,
-          type: 'markdown',
-          data: {
-            content: `### AI Staged: ${llmPrompt}\nComprehensive architecture analysis covering low-level concurrency constraints, distributed synchronization locks, and telemetry logging.`
-          }
-        },
-        {
-          id: `ai-2-${Date.now()}`,
-          type: 'code_stepper',
-          data: {
-            script: `// Generated for: ${llmPrompt}\nimport { telemetry } from '@penta/core';\n\nexport async function handlePayload(stream: Stream) {\n  const session = await telemetry.bindSession();\n  const packet = await stream.readFrame();\n  return telemetry.verifySignature(packet);\n}`,
-            language: 'typescript',
-            steps: [
-              { lines: [2], tooltip: 'Initialize session telemetry context.' },
-              { lines: [5, 6], tooltip: 'Read asynchronous stream frame without thread blocking.' },
-              { lines: [7], tooltip: 'Cryptographically verify packet signature.' }
-            ]
-          }
-        },
-        {
-          id: `ai-3-${Date.now()}`,
-          type: 'terminal_animation',
-          data: {
-            command: `penta-cli execute --verify-module --prompt="${llmPrompt.slice(0, 24)}"`,
-            expectedOutput: `[+] Schema validated against draft-07\n[+] Static analysis check passed\n[+] Staging preview rendered with 0 syntax warnings.`,
-            typingSpeedMs: 25
-          }
-        }
-      ];
+    try {
+      const res = await fetch('/api/admin/generate-lesson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: llmPrompt })
+      });
 
-      setBlocks(generatedBlocks);
+      if (!res.ok) {
+        throw new Error('Failed to generate lesson from server');
+      }
+
+      const data = await res.json();
+      
+      const formattedBlocks = data.blocks.map(b => ({
+        id: b.id || `ai-${Math.random()}-${Date.now()}`,
+        type: b.type.toLowerCase(),
+        data: b.content
+      }));
+
+      setBlocks([...blocks, ...formattedBlocks]);
       setMetadata(prev => ({
         ...prev,
         lessonTitle: llmPrompt.slice(0, 48)
       }));
-      setIsGenerating(false);
+      setLlmPrompt('');
       setShowLLMModal(false);
-    }, 1400);
+    } catch (error) {
+      console.error(error);
+      alert('Error generating lesson. Please check server logs.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const handleSaveToDB = () => {
+  const handleSaveToDB = async () => {
     const payload = {
-      metadata,
+      metadata: {
+        lessonTitle: metadata.lessonTitle || 'Untitled Lesson',
+        courseId: 'cuid_course_placeholder', // Hardcoded mock for now
+        moduleId: 'cuid_module_placeholder',
+      },
       blocks,
       savedBy: user.email,
-      timestamp: new Date().toISOString()
     };
-    console.log('[SAVED_LESSON_PAYLOAD_TO_PRISMA_DB]', payload);
-    setSaveToast(true);
-    setTimeout(() => setSaveToast(false), 3000);
+    
+    try {
+      const res = await fetch('/api/admin/save-lesson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) throw new Error('Database save failed');
+      
+      setSaveToast(true);
+      setTimeout(() => setSaveToast(false), 3000);
+    } catch (err) {
+      console.error(err);
+      alert('Note: Database save failed because Prisma is not connected to a MySQL instance yet.');
+    }
   };
 
   return (
