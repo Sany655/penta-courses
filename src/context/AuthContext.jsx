@@ -47,8 +47,8 @@ export const AuthProvider = ({ children }) => {
   const [adminCredentials, setAdminCredentials] = useState(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_admin_creds') : null;
     return saved ? JSON.parse(saved) : {
-      email: 'admin@pentabrid.com',
-      password: 'Password'
+      email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@pentabrid.com',
+      password: process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'ChangeMeImmediately'
     };
   });
 
