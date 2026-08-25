@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for src/index.css
+alwaysApply: false
+globs: src/index.css
+---
+
+<!-- ctx:begin id=cursor-2b277242, hash=2b277242 -->
+## High churn: src/index.css
+
+## Summary
+File `src/index.css` changed 7 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

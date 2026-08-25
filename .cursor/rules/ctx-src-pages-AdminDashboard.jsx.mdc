@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for src/pages/AdminDashboard.jsx
+alwaysApply: false
+globs: src/pages/AdminDashboard.jsx
+---
+
+<!-- ctx:begin id=cursor-b799f119, hash=b799f119 -->
+## High churn: src/pages/AdminDashboard.jsx
+
+## Summary
+File `src/pages/AdminDashboard.jsx` changed 3 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

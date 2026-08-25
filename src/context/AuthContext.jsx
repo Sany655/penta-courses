@@ -448,6 +448,7 @@ export const AuthProvider = ({ children }) => {
       recordQuizSuccess,
       isAdmin: user?.role === ROLES.ADMIN,
       isStudent: user?.role === ROLES.STUDENT,
+      isStaff: user?.role === ROLES.ADMIN || user?.role === 'INSTRUCTOR',
     }}>
       {children}
     </AuthContext.Provider>

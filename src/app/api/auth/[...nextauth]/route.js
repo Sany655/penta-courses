@@ -1,11 +1,9 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "../../../../lib/prisma";
+import { adminDb } from "../../../../lib/firebase-admin";
 import bcrypt from "bcryptjs";
 
 export const authOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -18,11 +16,17 @@ export const authOptions = {
           throw new Error("Missing credentials");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
+        const usersRef = adminDb.collection('users');
+        const snapshot = await usersRef.where('email', '==', credentials.email).limit(1).get();
 
-        if (!user || !user.passwordHash) {
+        if (snapshot.empty) {
+          throw new Error("Invalid credentials");
+        }
+
+        const userDoc = snapshot.docs[0];
+        const user = { id: userDoc.id, ...userDoc.data() };
+
+        if (!user.passwordHash) {
           throw new Error("Invalid credentials");
         }
 

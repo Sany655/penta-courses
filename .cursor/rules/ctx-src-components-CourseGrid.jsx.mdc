@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for src/components/CourseGrid.jsx
+alwaysApply: false
+globs: src/components/CourseGrid.jsx
+---
+
+<!-- ctx:begin id=cursor-0c9f3fc9, hash=0c9f3fc9 -->
+## High churn: src/components/CourseGrid.jsx
+
+## Summary
+File `src/components/CourseGrid.jsx` changed 6 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

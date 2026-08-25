@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for src/components/payment/BkashPaymentModal.jsx
+alwaysApply: false
+globs: src/components/payment/BkashPaymentModal.jsx
+---
+
+<!-- ctx:begin id=cursor-a716178f, hash=a716178f -->
+## High churn: src/components/payment/BkashPaymentModal.jsx
+
+## Summary
+File `src/components/payment/BkashPaymentModal.jsx` changed 3 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

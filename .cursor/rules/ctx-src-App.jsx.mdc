@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for src/App.jsx
+alwaysApply: false
+globs: src/App.jsx
+---
+
+<!-- ctx:begin id=cursor-c65ea778, hash=c65ea778 -->
+## High churn: src/App.jsx
+
+## Summary
+File `src/App.jsx` changed 7 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

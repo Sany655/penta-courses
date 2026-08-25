@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for src/components/Hero.jsx
+alwaysApply: false
+globs: src/components/Hero.jsx
+---
+
+<!-- ctx:begin id=cursor-2b01ab63, hash=2b01ab63 -->
+## High churn: src/components/Hero.jsx
+
+## Summary
+File `src/components/Hero.jsx` changed 5 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

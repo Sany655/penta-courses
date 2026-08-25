@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { adminDb } from '../../../../lib/firebase-admin';
 import bcrypt from 'bcryptjs';
 
 export async function POST(req) {
@@ -10,23 +10,26 @@ export async function POST(req) {
       return NextResponse.json({ message: 'Email and password required' }, { status: 400 });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
+    const usersRef = adminDb.collection('users');
+    const snapshot = await usersRef.where('email', '==', email).limit(1).get();
+
+    if (!snapshot.empty) {
       return NextResponse.json({ message: 'User already exists' }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const role = email === 'admin@pentabrid.com' ? 'ADMIN' : 'STUDENT';
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        passwordHash: hashedPassword,
-        role: email === 'admin@pentabrid.com' ? 'ADMIN' : 'STUDENT'
-      }
+    const newUserRef = usersRef.doc();
+    await newUserRef.set({
+      name,
+      email,
+      passwordHash: hashedPassword,
+      role,
+      createdAt: new Date().toISOString()
     });
 
-    return NextResponse.json({ success: true, user: { email: user.email, name: user.name } });
+    return NextResponse.json({ success: true, user: { email, name } });
 
   } catch (error) {
     console.error('Registration Error:', error);

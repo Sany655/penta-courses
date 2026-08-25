@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for prisma/schema.prisma
+alwaysApply: false
+globs: prisma/schema.prisma
+---
+
+<!-- ctx:begin id=cursor-a3d7d9bf, hash=a3d7d9bf -->
+## High churn: prisma/schema.prisma
+
+## Summary
+File `prisma/schema.prisma` changed 2 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

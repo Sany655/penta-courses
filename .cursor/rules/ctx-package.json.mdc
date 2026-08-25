@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for package.json
+alwaysApply: false
+globs: package.json
+---
+
+<!-- ctx:begin id=cursor-e2e9f4db, hash=e2e9f4db -->
+## High churn: package.json
+
+## Summary
+File `package.json` changed 2 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

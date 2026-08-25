@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for src/context/AuthContext.jsx
+alwaysApply: false
+globs: src/context/AuthContext.jsx
+---
+
+<!-- ctx:begin id=cursor-2ac2ebf2, hash=2ac2ebf2 -->
+## High churn: src/context/AuthContext.jsx
+
+## Summary
+File `src/context/AuthContext.jsx` changed 7 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { adminDb } from '../../../../lib/firebase-admin';
 import { z } from 'zod';
 
 const lessonSchema = z.object({
@@ -17,18 +17,24 @@ export async function POST(request) {
     const json = await request.json();
     const validatedData = lessonSchema.parse(json);
 
-    // Assuming course and module already exist in DB for this to work
-    // In a real app we'd verify they exist.
-    const lesson = await prisma.lesson.create({
-      data: {
-        title: validatedData.metadata.lessonTitle,
-        moduleId: validatedData.metadata.moduleId,
-        orderIndex: Date.now(), // Fallback for ordering
-        contentJson: validatedData.blocks,
-      }
-    });
+    // Using Firestore structure: courses/{courseId}/modules/{moduleId}/lessons/{lessonId}
+    // Alternatively, a flat 'lessons' collection with courseId and moduleId fields.
+    // Let's use a flat 'lessons' collection for easier querying.
+    const lessonsRef = adminDb.collection('lessons');
+    const newLessonRef = lessonsRef.doc();
 
-    return NextResponse.json({ success: true, lesson });
+    const lessonData = {
+      title: validatedData.metadata.lessonTitle,
+      moduleId: validatedData.metadata.moduleId,
+      courseId: validatedData.metadata.courseId,
+      orderIndex: Date.now(), // Fallback for ordering
+      contentJson: validatedData.blocks,
+      createdAt: new Date().toISOString()
+    };
+
+    await newLessonRef.set(lessonData);
+
+    return NextResponse.json({ success: true, lesson: { id: newLessonRef.id, ...lessonData } });
 
   } catch (error) {
     console.error('Error saving lesson:', error);

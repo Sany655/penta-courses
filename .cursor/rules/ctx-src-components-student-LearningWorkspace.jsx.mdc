@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for src/components/student/LearningWorkspace.jsx
+alwaysApply: false
+globs: src/components/student/LearningWorkspace.jsx
+---
+
+<!-- ctx:begin id=cursor-bb4a72b9, hash=bb4a72b9 -->
+## High churn: src/components/student/LearningWorkspace.jsx
+
+## Summary
+File `src/components/student/LearningWorkspace.jsx` changed 3 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

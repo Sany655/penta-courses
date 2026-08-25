@@ -1,0 +1,15 @@
+---
+description: ContextVC scoped rules for src/components/marketing/SocialProof.jsx
+alwaysApply: false
+globs: src/components/marketing/SocialProof.jsx
+---
+
+<!-- ctx:begin id=cursor-a055c8f8, hash=a055c8f8 -->
+## High churn: src/components/marketing/SocialProof.jsx
+
+## Summary
+File `src/components/marketing/SocialProof.jsx` changed 3 times in recent git history.
+
+## Notes
+Auto-generated codemap entry from `ctx backfill`.
+<!-- ctx:end -->

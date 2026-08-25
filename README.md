@@ -1,181 +1,164 @@
-# ⚡ Pentabrid Engine (`penta-courses`)
+# Penta Course Platform
 
-> **The Official Next-Gen Technical eLearning Platform & Curriculum-as-a-Service (CaaS) Engine of [Pentabrid](https://pentabrid.com/).**  
-> Dedicated to mission-critical software engineering, kernel networking, offensive cybersecurity, and clinical predictive modeling.
+Penta Course is a modern, next-generation Learning Management System (LMS) built with Next.js, designed to provide interactive and engaging educational experiences. It supports rich content delivery including code steppers, terminal animations, and network diagrams, alongside traditional video and markdown content. 
 
-[![Next.js](https://img.shields.io/badge/Next.js_14+-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
-[![React 19](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
-[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS_4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Framer Motion](https://img.shields.io/badge/Framer_Motion-black?style=for-the-badge&logo=framer&logoColor=blue)](https://www.framer.com/motion/)
-[![Prisma ORM](https://img.shields.io/badge/Prisma_ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
-[![Google Gemini AI](https://img.shields.io/badge/Gemini_AI_2.5-8E75C4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
-[![Vercel Ready](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
+The platform features a unique progression system with quizzes and an optional microtransaction model to bypass specific modules.
 
----
-
-## 🎯 Executive Overview
-
-Traditional video-based eLearning fails for complex, low-level technical disciplines. **Pentabrid Engine** — the official education platform of [Pentabrid](https://pentabrid.com/) — eliminates passive video filler in favor of **active execution**: auto-typing CLI sandbox simulations, line-by-line interactive code execution steppers, visual packet-flow analyzers, and strict gatekeeper assessments with microtransaction unlocks.
-
-Designed both as a **stand-alone learning destination** and a **white-label Marketing-as-a-Service (MaaS) EdTech platform**, Pentabrid allows developer tooling companies, enterprise security firms, and AI labs to build high-converting curriculum pipelines with embedded AI synthesis.
+## Tech Stack
+- **Frontend & Backend**: Next.js 16 (App Router), React 19
+- **Styling & Animation**: TailwindCSS 4, Framer Motion
+- **Database & Services**: Firebase (Firestore, Authentication, Functions/App Hosting)
+- **AI Integration**: Google GenAI (`@google/genai`)
+- **Payments**: Stripe (Integrated via Transactions)
 
 ---
 
-## 🏛️ The Four Core Architectural Pillars
+## System Architecture
 
-```
-                      ┌────────────────────────────────────────┐
-                      │        PENTABRID ENGINE ARCHITECTURE   │
-                      └──────────────────┬─────────────────────┘
-                                         │
-     ┌──────────────────┬────────────────┴────────────────┬──────────────────┐
-     ▼                  ▼                                 ▼                  ▼
-┌──────────────┐ ┌──────────────┐                 ┌──────────────┐   ┌──────────────┐
-│  PILLAR 1:   │ │  PILLAR 2:   │                 │  PILLAR 3:   │   │  PILLAR 4:   │
-│ High-Convert │ │ Strict RBAC  │                 │ Interactive  │   │  AI Admin    │
-│ Marketing,   │ │ & Data       │                 │ Split-Screen │   │  Studio &    │
-│ FAQ & Portal │ │ Isolation    │                 │ Workspace    │   │  Advisory    │
-└──────────────┘ └──────────────┘                 └──────────────┘   └──────────────┘
-```
-
-### 1. 🚀 High-Converting Marketing, FAQ & Inquiries Portal
-* **Aesthetic & Dual Theming**: Obsidian dark mode (`#05070a`) and crisp white light mode (`#f8fafc`) with dynamic ambient grid lines, high-contrast typography, and instant persistent theme toggle.
-* **Hero Experience**: Real-time terminal typing subheadline cycling live CLI commands across all technical tracks.
-* **Dynamic Content Control**: Real-time toggling and updating of hero headlines and technical commands directly via the Admin Studio.
-* **Curriculum Catalog**: Dynamic track badges showing difficulty indices, estimated hours, lock/unlock states, and prerequisite dependency graphs.
-* **FAQ Knowledge Base**: Comprehensive accordion covering Pentabrid ecosystem integration (`https://pentabrid.com`), zero-video methodology, and enterprise licensing.
-* **Contact & Suggestion Gateway**: Direct advisory form where engineers and team leads can request custom enterprise tracks and propose new curriculum topics that sync straight to the Admin Studio.
-* **Practitioner Social Proof**: Real-world validation from Senior Security Engineers, Staff ML Architects, and Infrastructure Leads.
-
----
-
-### 2. 🛡️ Strict Role-Based Access Control (RBAC) & Data Isolation
-* **Granular Roles**: Three built-in permission tiers:
-  * `STUDENT`: Access to enrolled courses, interactive sandbox workspace, quiz submissions, and payment unlocks.
-  * `INSTRUCTOR`: Access to course authoring tools, student progression telemetry, and module reviews.
-  * `ADMIN`: Full system configuration, AI Block synthesizer access, direct database management, and manual transaction verification.
-* **Route Guards & Middleware**: Edge-level JWT token verification redirecting unauthorized requests (`/admin/*` renders a custom cyber-styled 403 screen).
-* **Data Isolation**: Database and API queries are strictly isolated to the authenticated user's session.
-
----
-
-### 3. 💻 The Interactive Student Workspace
-* **Split-Screen Layout**: Fluid, resizable dual-pane interface with draggable divider (clamped between 25% and 75%), in-workspace light/dark switcher, and responsive mobile tab switching.
-* **Zero-Video Interactive UI Blocks**:
-  * `<MarkdownBlock/>`: Structured theoretical doctrine and mathematical principles.
-  * `<AnimatedTerminal/>`: Auto-typing terminal simulator with custom prompt (`user@lab-env:~$`), stdout streaming, copy buffer, and instant replay.
-  * `<CodeStepper/>`: Step-by-step code highlighting with contextual explanatory tooltips.
-  * `<NetworkFlow/>`: Animated SVG/node data-flow simulator demonstrating packet movement between kernel and userland layers.
-* **Gamified Gatekeeper Progression**:
-  * Lessons remain locked until the module's `<QuizGatekeeper/>` assessment is passed with at least an **80% score**.
-  * **bKash Instant Bypass & Enrollment Gateway**: Integrated modal with custom merchant/personal bKash phone numbers, reference tagging, and instant TrxID submission for manual admin approval.
-
----
-
-### 4. 🤖 AI-Powered Admin Studio & Control Node
-* **Centralized Dashboard**: A unified sidebar interface for managing the Lesson Builder, dynamic Site Settings (marketing copy), bKash Payment Gateway configuration, and Security & Auth credentials.
-* **bKash Verification Center & Transaction Ledger**: 
-  * Live editable bKash phone number, account type (Personal/Merchant), default bypass fee (BDT), and student instructions.
-  * Real-time audit ledger logging all submitted TrxIDs with **"Verify & Grant Access"** and **"Reject"** one-click approval workflows.
-  * **Direct Override Tool**: Directly grant module or full course access to any student email address on demand.
-* **Notion-Style Block Editor**: Stackable, reorderable visual block authoring for Markdown, Terminal CLI, Code Stepper, and Network Diagrams.
-* **Human-in-the-Loop Gemini LLM Synthesizer**:
-  * Integrated prompt modal connected to Google's Gemini 2.5 API.
-  * Enforces strict **draft-07 JSON schemas** to generate production-ready multi-block lessons.
-* **Interactive Staging Canvas**: Live sandbox preview allowing instructors to test code stepping, terminal typing, and node animations before clicking **"Accept & Publish"** to commit directly to MySQL.
-
----
-
-## 📚 Curriculum Tracks
-
-| Track Category | Focus Area | Exemplar Technologies | Difficulty |
-| :--- | :--- | :--- | :---: |
-| **Cybersecurity** | Offensive Security & Kernel Tradecraft | Scapy Raw Sockets, EDR ETW-Ti Hooks, DKOM, C2 Tunnels | `Advanced` |
-| **Predictive ML** | Clinical AI & Tabular Deep Learning | XGBoost, TreeSHAP Biomarker Attribution, Drift Tests | `Expert` |
-| **Networking** | Protocol Engineering & High-Speed Filters | eBPF / XDP at 100Gbps, BGP Route Leak Guards, QUIC | `Intermediate` |
-| **Web Architecture** | Distributed Systems & High Concurrency | Redis Redlock Mutex, Event-Driven CQRS, Edge SSR | `Advanced` |
-
----
-
-## 🗄️ Database Architecture (`prisma/schema.prisma`)
-
-```prisma
-datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
-}
-
-// Core Relational Models:
-// - User (RBAC roles: STUDENT, INSTRUCTOR, ADMIN)
-// - Course, Module, Lesson (stores typed JSON block payload)
-// - Quiz (passing thresholds & explanations)
-// - UserProgress (sequential unlocking & completion records)
-// - Transaction (bKash & Stripe microtransactions for test bypasses)
+```mermaid
+graph TD
+    Client[Client Browser] -->|HTTP / React Server Components| NextJS[Next.js App Router]
+    NextJS -->|Server Actions / Firebase SDK| Auth[Firebase Auth]
+    NextJS -->|Firebase Admin SDK| DB[(Firestore NoSQL)]
+    NextJS -->|API Requests| Stripe[Stripe API]
+    NextJS -->|Prompts| GenAI[Google GenAI]
+    
+    Auth --> DB
 ```
 
 ---
 
-## 🛠️ Tech Stack & Tooling
+## Entity-Relationship (ER) Diagram (NoSQL Concept)
 
-* **Frontend**: Next.js (App Router), React 19, Tailwind CSS 4, Framer Motion, Lucide Icons, Canvas Confetti.
-* **Backend / API**: Node.js, Next.js Serverless Route Handlers, Zod Runtime Validation.
-* **Database & ORM**: MySQL with Prisma ORM.
-* **Authentication**: NextAuth / Auth.js with RBAC edge middleware.
-* **AI Engine**: Google Gen AI SDK (`@google/genai` / Gemini 2.5 Flash).
-* **Payment Gateway**: bKash Instant Gateway with TrxID Ledger & Stripe Checkout.
+*Note: In Firestore, these will be represented as Root Collections and Subcollections.*
+
+```mermaid
+erDiagram
+    USERS ||--o{ ACCOUNTS : has
+    USERS ||--o{ SESSIONS : has
+    USERS ||--o{ COURSES : "creates (Instructor)"
+    USERS ||--o{ ENROLLMENTS : enrolls
+    USERS ||--o{ PROGRESS : tracks
+    USERS ||--o{ TRANSACTIONS : performs
+
+    COURSES ||--o{ MODULES : contains
+    COURSES ||--o{ ENROLLMENTS : has
+
+    MODULES ||--o{ LESSONS : contains
+    MODULES ||--o| QUIZZES : has
+
+    LESSONS ||--o{ PROGRESS : tracked_by
+
+    USER {
+        String id PK
+        String name
+        String email
+        Role role
+    }
+    COURSE {
+        String id PK
+        String title
+        TrackCategory category
+        Difficulty difficulty
+        Int priceInCents
+        Boolean isPublished
+    }
+    MODULE {
+        String id PK
+        String title
+        Int orderIndex
+        Int bypassFeeInCents
+    }
+    LESSON {
+        String id PK
+        String title
+        Json contentJson
+        Int durationMin
+    }
+    QUIZ {
+        String id PK
+        Int passingScore
+        Json questionsJson
+    }
+    USER_PROGRESS {
+        String id PK
+        Boolean isCompleted
+        Boolean quizPassed
+        Boolean unlockedViaPay
+    }
+    TRANSACTION {
+        String id PK
+        Int amountInCents
+        TransactionStatus status
+        TransactionType type
+    }
+```
 
 ---
 
-## ⚡ Quickstart & Local Setup
+## Use Case Diagram
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/Sany655/penta-courses.git
-cd penta-courses
-```
+```mermaid
+usecaseDiagram
+    actor Student
+    actor Instructor
+    actor Admin
 
-### 2. Install dependencies
-```bash
-npm install
-```
+    Student --> (Browse Courses)
+    Student --> (Enroll in Course)
+    Student --> (Take Lessons & Interactive Blocks)
+    Student --> (Take Module Quizzes)
+    Student --> (Bypass Module via Microtransaction)
+    Student --> (Track Progress)
 
-### 3. Configure environment variables
-Create a `.env` file in the root directory:
-```env
-DATABASE_URL="mysql://user:password@localhost:3306/penta_courses"
-NEXTAUTH_SECRET="your_nextauth_secret_key"
-NEXTAUTH_URL="http://localhost:3000"
-GEMINI_API_KEY="your_google_gemini_api_key"
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-```
+    Instructor --> (Create & Edit Courses)
+    Instructor --> (Manage Modules & Lessons)
+    Instructor --> (Publish Course)
 
-### 4. Start development server
-```bash
-npm run dev
-```
+    Admin --> (Manage Platform)
+    Admin --> (View System Transactions)
 
-### 5. Access the Admin Studio
-Navigate to `http://localhost:5173/auth` and log in with the default root credentials:
-- **Email**: `admin@pentabrid.com`
-- **Password**: `Password`
-
-### 6. Build for production
-```bash
-npm run build
+    (Bypass Module via Microtransaction) .> (Process Stripe Payment) : include
+    (Enroll in Course) .> (Process Stripe Payment) : include
 ```
 
 ---
 
-## 🚀 One-Click Vercel Deployment
+## Getting Started
 
-Deploy directly to **Vercel** with zero configuration required. The project includes [`vercel.json`](file:///c:/All/works/penta-course/vercel.json) with client-side SPA route rewrites:
+### Prerequisites
+- Node.js (v18+)
+- MariaDB Server
+- Stripe Account (for payment processing)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Sany655/penta-courses)
+### Setup Instructions
 
----
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-## 📄 License & Attribution
+2. **Environment Configuration**
+   Copy the `.env.example` file to `.env` and fill in your details:
+   ```bash
+   cp .env.example .env
+   ```
+   *Make sure to configure your `DATABASE_URL`, NextAuth secrets, and Stripe API keys.*
 
-Distributed under the **MIT License**. Built with ❤️ for developers and security engineers by **Mohammad Mazharul Alam (Sany655)**.
+3. **Database Setup**
+   Push the Prisma schema to your MariaDB instance:
+   ```bash
+   npx prisma db push
+   ```
+   *(Alternatively, use `npx prisma migrate dev` for migration history)*
+
+4. **Run the Development Server**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) to view the application.
+
+## Project Structure
+- `src/` - Application source code (Next.js App Router).
+- `prisma/` - Prisma ORM schema and configuration.
+- `public/` - Static assets.
