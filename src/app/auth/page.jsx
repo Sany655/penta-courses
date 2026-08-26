@@ -69,7 +69,7 @@ const Auth = () => {
   const handleQuickFill = (type) => {
     if (type === 'admin') {
       setEmail('admin@pentabrid.com');
-      setPassword('Password');
+      setPassword('ChangeMeImmediately');
       setIsLogin(true);
     } else {
       setEmail('alex.mercer@pentabrid.io');
