@@ -3,16 +3,21 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('penta_theme');
-      if (saved) return saved;
+  const [theme, setTheme] = useState('dark');
+  const [mounted, setMounted] = useState(false);
+
+  // Only read from localStorage after hydration to avoid mismatch
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem('penta_theme');
+    if (saved) {
+      setTheme(saved);
     }
-    // Default to dark mode
-    return 'dark';
-  });
+  }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+    
     localStorage.setItem('penta_theme', theme);
     const root = document.documentElement;
     const body = document.body;
@@ -28,11 +33,16 @@ export const ThemeProvider = ({ children }) => {
       body.classList.remove('light-theme');
       body.classList.add('dark-theme');
     }
-  }, [theme]);
+  }, [theme, mounted]);
 
   const toggleTheme = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
+
+  // Don't render children until mounted to prevent flash of wrong theme
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <ThemeContext.Provider value={{
