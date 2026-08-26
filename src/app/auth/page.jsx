@@ -66,18 +66,6 @@ const Auth = () => {
     }
   };
 
-  const handleQuickFill = (type) => {
-    if (type === 'admin') {
-      setEmail('admin@pentabrid.com');
-      setPassword('ChangeMeImmediately');
-      setIsLogin(true);
-    } else {
-      setEmail('alex.mercer@pentabrid.io');
-      setPassword('Password');
-      setIsLogin(true);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#05070a] flex items-center justify-center p-6 pt-24 pb-16 font-sans">
       <div className="w-full max-w-md bg-[#090d16] border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden">
@@ -192,27 +180,6 @@ const Auth = () => {
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
-
-        {/* Demo Fast Fill Pill (Non-intrusive) */}
-        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-500">
-          <span>Quick Demo Fill:</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('admin')}
-              className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/30 hover:bg-purple-500/20 transition"
-            >
-              Root Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('student')}
-              className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
-            >
-              Student
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -15,19 +15,7 @@ export const AuthProvider = ({ children }) => {
   // Registered student accounts stored in localStorage (mock data fallback)
   const [registeredUsers, setRegisteredUsers] = useState(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_registered_students') : null;
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'usr_student_01',
-        name: 'Alex Mercer',
-        email: 'alex.mercer@pentabrid.io',
-        role: ROLES.STUDENT,
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-        unlockedModules: ['module-1'],
-        bypassedModules: [],
-        pendingModules: [],
-        completedQuizzes: []
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [user, setUser] = useState(null);
@@ -64,48 +52,13 @@ export const AuthProvider = ({ children }) => {
 
   const [transactions, setTransactions] = useState(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_bkash_txns') : null;
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'txn_init_01',
-        studentEmail: 'alex.mercer@pentabrid.io',
-        studentName: 'Alex Mercer',
-        itemType: 'module',
-        itemId: 'module-2',
-        itemTitle: 'Phase 02: Kernel Tradecraft & EDR Hooks',
-        amount: '250 BDT',
-        trxId: '8M4K9L2P1Q',
-        senderPhone: '01799887766',
-        timestamp: new Date(Date.now() - 3600000 * 2).toLocaleString(),
-        status: 'PENDING'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   // Contact / Suggestions / Custom Track Inquiries
   const [inquiries, setInquiries] = useState(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_inquiries') : null;
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'inq_01',
-        name: 'Tariq Mahmud',
-        email: 'tariq@fintech-labs.io',
-        company: 'Fintech Labs BD',
-        category: 'Enterprise Custom Track',
-        message: 'We want to license Pentabrid Engine for our internal 25-person security engineering team. Can we customize the eBPF networking and C2 bypass modules for our banking threat model?',
-        timestamp: new Date(Date.now() - 3600000 * 5).toLocaleString(),
-        status: 'NEW'
-      },
-      {
-        id: 'inq_02',
-        name: 'Sara Chen',
-        email: 'sara.chen@ai-biomed.org',
-        company: 'BioMed Research',
-        category: 'Curriculum Suggestion',
-        message: 'Could you add an interactive lab focusing on Graph Neural Networks (GNNs) for molecular property prediction in the Predictive ML track?',
-        timestamp: new Date(Date.now() - 3600000 * 18).toLocaleString(),
-        status: 'REVIEWED'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   // Persistent granted access dictionary: { [email]: string[] }
