@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../../lib/auth-options';
 
 export async function POST(request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !['ADMIN', 'INSTRUCTOR'].includes(session.user.role)) {
+      return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+    }
+
     const { prompt } = await request.json();
+    if (typeof prompt !== 'string' || !prompt.trim()) {
+      return NextResponse.json({ error: 'A lesson prompt is required.' }, { status: 400 });
+    }
 
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(

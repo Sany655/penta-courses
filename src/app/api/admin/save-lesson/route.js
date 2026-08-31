@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../../lib/firebase-admin';
 import { z } from 'zod';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../../lib/auth-options';
 
 const lessonSchema = z.object({
   metadata: z.object({
@@ -14,6 +16,11 @@ const lessonSchema = z.object({
 
 export async function POST(request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !['ADMIN', 'INSTRUCTOR'].includes(session.user.role)) {
+      return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+    }
+
     const json = await request.json();
     const validatedData = lessonSchema.parse(json);
 
@@ -29,7 +36,8 @@ export async function POST(request) {
       courseId: validatedData.metadata.courseId,
       orderIndex: Date.now(), // Fallback for ordering
       contentJson: validatedData.blocks,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      savedBy: session.user.email
     };
 
     await newLessonRef.set(lessonData);

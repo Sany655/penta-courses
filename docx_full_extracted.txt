@@ -1,0 +1,1304 @@
+MASTER BUILD PROMPT — Adaptive Learning Engine
+You are the lead software architect, senior full-stack engineer, AI/ML engineer, database architect, UX engineer, and DevOps engineer responsible for building a production-quality Adaptive Learning Engine (ALE).
+Do not build a conventional LMS, course platform, chatbot, or simple AI tutor.
+Build a personal/adaptive learning operating system whose purpose is:
+Take a learner from “I want to master X” to independent competence as efficiently as possible by continuously modeling what they know, detecting weaknesses, selecting the next best learning action, generating/adapting learning activities, collecting evidence, and updating the learner model.
+The system must work for arbitrary knowledge domains such as programming, mathematics, medicine, engineering, languages, science, business, etc.
+The architecture must support:
+Public web usage
+Personal Windows desktop usage
+Android usage
+Offline learning
+Online synchronization
+Multiple AI providers
+Future native/mobile/desktop expansion
+Future multi-user/public deployment
+PART 1 — CORE PRODUCT PHILOSOPHY
+The system is NOT:
+a course marketplace
+a video-learning platform
+a static curriculum
+a chatbot that says what to study
+an LLM wrapper
+a completion tracker
+The system IS:
+Goal
+ ↓
+Initial diagnosis
+ ↓
+Domain/knowledge graph
+ ↓
+Learner model
+ ↓
+Adaptive decision engine
+ ↓
+Learning action
+ ↓
+Attempt
+ ↓
+Evidence
+ ↓
+Mastery update
+ ↓
+Failure diagnosis
+ ↓
+Path adaptation
+ ↓
+Next action
+ ↓
+Repeat
+The central principle is:
+Knowledge is represented independently from the learner. The learner model represents the individual's current state. The adaptive engine connects the two.
+PART 2 — RECOMMENDED ARCHITECTURE
+Use a modular monolith first, not microservices.
+Recommended stack:
+Web
+Next.js
+TypeScript
+React
+Tailwind CSS
+accessible component system
+PWA support where appropriate
+Backend
+Python
+FastAPI
+Pydantic
+SQLAlchemy
+Alembic
+Database
+PostgreSQL
+Use PostgreSQL as the source of truth for online data.
+Do NOT introduce Neo4j initially.
+Represent the knowledge graph using relational tables and graph relationships.
+The architecture must allow migration to a graph database later if required.
+AI
+Create an abstraction:
+LLMProvider
+ ├── OpenAIProvider
+ ├── GeminiProvider
+ ├── AnthropicProvider
+ └── LocalProvider
+Never hard-code the application around one provider.
+AI must be a replaceable service.
+Desktop
+Use:
+Tauri
+existing web frontend
+The Windows desktop application should reuse the web UI and communicate with the same backend when online.
+For offline mode, use local persistence.
+Android
+Use:
+Flutter
+Dart
+Do not force Flutter into the web application.
+The Android client should communicate through the same public API contract.
+The backend must remain platform-independent.
+Local storage
+For desktop/mobile offline:
+SQLite
+local event queue
+local learner state cache
+local domain graph cache
+local activity/content cache
+Use an offline-first architecture.
+PART 3 — HIGH-LEVEL SYSTEM
+Implement these modules:
+auth
+users
+domains
+knowledge_graph
+learner
+goals
+sessions
+activities
+assessments
+projects
+evidence
+failure_diagnosis
+adaptive_engine
+recommendations
+ai
+resources
+exploration
+sync
+analytics
+Keep these modules logically isolated even inside the modular monolith.
+PART 4 — DOMAIN GRAPH
+The domain graph represents what can be learned.
+Create:
+Domain
+Concept
+Skill
+ConceptRelation
+SkillRelation
+ConceptSkill
+Resource
+ResourceConcept
+Activity
+Assessment
+Project
+ProjectTask
+Domain
+Fields:
+id
+name
+slug
+description
+version
+status
+difficulty
+created_at
+updated_at
+Concept
+Fields:
+id
+domain_id
+name
+slug
+description
+type
+difficulty
+importance
+abstraction_level
+estimated_learning_effort
+canonical_definition
+common_misconceptions
+created_at
+updated_at
+Concept types:
+FOUNDATION
+CONCEPT
+THEORY
+TECHNIQUE
+ALGORITHM
+PRINCIPLE
+PATTERN
+TERMINOLOGY
+Skill
+Fields:
+id
+domain_id
+name
+description
+difficulty
+importance
+created_at
+updated_at
+Concept relationships
+Support:
+REQUIRED_PREREQUISITE
+HELPFUL_PREREQUISITE
+RELATED
+GENERALIZES
+SPECIALIZES
+PART_OF
+CONTRASTS_WITH
+ALTERNATIVE_TO
+Each relation should contain:
+strength
+confidence
+evidence
+Do not assume every prerequisite is mandatory.
+Distinguish strict prerequisites from helpful background knowledge.
+Concept → Skill
+Represent which concepts support which skills.
+Skill → Skill
+Represent skill prerequisites.
+PART 5 — LEARNING RESOURCES
+Resources must attach to knowledge rather than define the curriculum.
+Support:
+BOOK
+ARTICLE
+PAPER
+VIDEO
+DOCUMENTATION
+COURSE
+TUTORIAL
+EXAMPLE
+DATASET
+Store:
+title
+source
+url
+author
+quality_score
+difficulty
+language
+metadata
+Resources should map to concepts.
+PART 6 — LEARNING ACTIVITIES
+Create:
+READ
+WATCH
+RECALL
+EXPLAIN
+QUIZ
+PROBLEM
+CODING
+SIMULATION
+DEBUG
+COMPARE
+IMPLEMENT
+BUILD
+TEACH
+Each activity should support:
+concept
+skill
+difficulty
+estimated_time
+instructions
+success_criteria
+evaluation_rubric
+PART 7 — PROJECTS
+Projects are first-class learning objects.
+A project should contain:
+id
+domain_id
+name
+description
+difficulty
+scope
+success_criteria
+Project tasks should have:
+id
+project_id
+title
+description
+required_concepts
+required_skills
+dependencies
+Projects should be used as high-value evidence of real competence.
+PART 8 — LEARNER MODEL
+Separate learner profile from learner knowledge state.
+LearnerProfile
+Represent:
+learning_mode
+exploration_tendency
+persistence
+deep_focus_capacity
+context_switch_sensitivity
+feedback_preference
+explanation_preference
+challenge_preference
+project_preference
+Each trait must contain:
+value
+confidence
+evidence_count
+last_updated
+Do not treat self-reported preferences as absolute truth.
+Observed behavior should progressively update the profile.
+PART 9 — LEARNER DOMAIN STATE
+Represent:
+user_id
+domain_id
+level
+overall_mastery
+confidence
+momentum
+engagement
+time_invested
+last_active
+Use levels:
+L0 Curious
+L1 Orientation
+L2 Foundational
+L3 Working
+L4 Independent
+L5 Advanced
+L6 Expert
+Do not claim expertise simply from course completion.
+PART 10 — LEARNER CONCEPT STATE
+This is the core learner state.
+Store:
+user_id
+concept_id
+mastery
+confidence
+recall_strength
+explanation_strength
+application_strength
+implementation_strength
+creation_strength
+attempt_count
+success_count
+failure_count
+forgetting_rate
+review_due
+first_seen
+last_seen
+last_success
+last_failure
+updated_at
+Never reduce knowledge to one binary:
+learned = true
+Maintain multidimensional mastery.
+PART 11 — LEARNER SKILL STATE
+Mirror the concept model for skills.
+Track:
+mastery
+confidence
+attempt_count
+success_count
+failure_count
+last_success
+last_failure
+Skills should require application evidence.
+PART 12 — EVIDENCE
+Every meaningful learning interaction should create evidence.
+Create:
+LearningEvidence
+Store:
+user_id
+concept_id
+skill_id
+activity_id
+session_id
+attempt_id
+evidence_type
+score
+quality
+confidence_reported
+time_taken
+created_at
+Evidence types:
+RECALL
+EXPLANATION
+PROBLEM_SOLVING
+IMPLEMENTATION
+PROJECT
+TEACHING
+DEBUGGING
+TRANSFER
+Do not update mastery without recording evidence.
+PART 13 — ATTEMPTS
+Create:
+Attempt
+Store:
+user_id
+activity_id
+session_id
+started_at
+completed_at
+result
+answer
+solution
+error_type
+help_requested
+hint_count
+self_confidence
+PART 14 — FAILURE DIAGNOSIS
+Create a failure taxonomy.
+Categories:
+KNOWLEDGE_GAP
+PREREQUISITE_GAP
+MISCONCEPTION
+RECALL_FAILURE
+APPLICATION_FAILURE
+PROCEDURAL_FAILURE
+REASONING_FAILURE
+EXECUTION_FAILURE
+ATTENTION_FAILURE
+CONTEXT_FAILURE
+Each failure should include:
+category
+subcategory
+severity
+diagnosis_confidence
+resolved
+The system should react differently to different failure types.
+Example:
+Recall failure
+→ retrieval practice
+Prerequisite gap
+→ prerequisite repair
+Misconception
+→ alternative explanation + counterexample
+Application failure
+→ contextual practice
+Execution failure
+→ guided implementation
+Attention/context failure
+→ reduce task complexity or suggest pause
+PART 15 — LEARNING EVENTS
+Create an append-only event stream.
+Events:
+SESSION_STARTED
+CONCEPT_OPENED
+RESOURCE_OPENED
+ACTIVITY_STARTED
+ACTIVITY_COMPLETED
+ACTIVITY_FAILED
+HINT_REQUESTED
+EXPLANATION_REQUESTED
+CONCEPT_REVISITED
+PROJECT_STARTED
+PROJECT_COMPLETED
+EXPLORATION_CAPTURED
+CONTEXT_SWITCHED
+SESSION_ABANDONED
+Each event:
+id
+user_id
+session_id
+event_type
+entity_type
+entity_id
+metadata JSON
+created_at
+This event stream will later be used for behavioral modeling and synchronization.
+PART 16 — GOALS
+A goal represents the desired outcome.
+Store:
+id
+user_id
+domain_id
+title
+description
+goal_type
+target_level
+priority
+deadline
+status
+created_at
+updated_at
+Goal types:
+EXPLORATION
+COMPETENCE
+PROJECT
+PROFESSIONAL
+ACADEMIC
+EXPERTISE
+PART 17 — LEARNING CONTEXT
+Track the learner's current mental/work context.
+Store:
+user_id
+primary_goal_id
+secondary_goal_ids
+current_domain
+current_concept
+current_project
+context_start
+context_strength
+Context continuity is important.
+Do not constantly recommend unrelated topics simply because they have high importance.
+PART 18 — EXPLORATION SYSTEM
+Users should be able to capture curiosity without abandoning their main goal.
+Create:
+ExplorationItem
+Store:
+user_id
+title
+domain
+reason
+interest_score
+times_mentioned
+times_revisited
+status
+created_at
+last_revisited
+Statuses:
+CAPTURED
+PARKED
+EXPLORING
+PROMOTED
+DISMISSED
+Provide a:
+Curiosity Override
+which lets the learner temporarily explore something outside the current path.
+Record context switching as an event.
+PART 19 — ADAPTIVE ENGINE V1
+Implement a deterministic adaptive engine first.
+Do NOT let an LLM directly control the learner state.
+Inputs:
+Goal
+Domain Graph
+Learner Profile
+Learner Concept State
+Learner Skill State
+Recent Evidence
+Recent Failures
+Current Context
+Available Time
+Outputs:
+Next best learning action
+Target concept/skill
+Recommended activity
+Difficulty
+Estimated duration
+Reason
+Confidence
+PART 20 — CANDIDATE SCORING
+For each candidate learning target calculate:
+candidate_score =
+    0.25 * goal_relevance
+  + 0.20 * weakness
+  + 0.15 * prerequisite_value
+  + 0.15 * retention_need
+  + 0.10 * context_continuity
+  + 0.10 * skill_importance
+  + 0.05 * curiosity
+Where:
+weakness = 1 - mastery
+Calculate retention using an initial forgetting model:
+retention =
+exp(-forgetting_rate * days_since_last_evidence)
+Then:
+retention_need = 1 - retention
+These weights must be configurable.
+Do not hard-code them throughout the application.
+Create an AdaptiveEngine configuration object.
+PART 21 — ACTION SELECTION
+After selecting the target concept, choose an action.
+Initial rules:
+mastery < 0.30
+→ LEARN
+explanation_strength < 0.60
+→ EXPLAIN
+application_strength < 0.60
+→ PRACTICE
+implementation_strength < 0.60
+→ IMPLEMENT
+creation_strength < 0.60
+→ BUILD
+review_due
+→ REVIEW
+otherwise
+→ ADVANCE
+The engine must also consider recent failures.
+PART 22 — FAILURE-DRIVEN REPAIR
+If the learner fails an activity:
+Attempt
+ ↓
+Failure diagnosis
+ ↓
+Check prerequisite graph
+ ↓
+Find weakest relevant prerequisite
+ ↓
+Generate repair activity
+ ↓
+Verify repair
+ ↓
+Return to original activity
+Do not restart the entire curriculum.
+PART 23 — ADAPTIVE DIFFICULTY
+Maintain an estimated difficulty for activities.
+Initial target:
+approximately 65–80% probability of successful completion
+If repeated success occurs:
+increase difficulty
+If repeated failure occurs:
+reduce difficulty
+Difficulty adjustment must be gradual.
+Do not make a large jump after a single failure.
+PART 24 — RECOMMENDATION OBJECT
+Create a structured recommendation:
+{
+  "action": "PRACTICE",
+  "target": {
+    "type": "concept",
+    "id": "..."
+  },
+  "activity": {
+    "type": "PROBLEM",
+    "difficulty": 0.67
+  },
+  "estimated_minutes": 25,
+  "confidence": 0.91,
+  "reasons": [
+    "Application mastery is low",
+    "Prerequisites are satisfied",
+    "High relevance to current goal",
+    "High context continuity"
+  ]
+}
+The UI must be able to explain:
+Why am I doing this?
+PART 25 — AI LAYER
+AI should perform tasks such as:
+concept explanation
+alternative explanation
+examples
+counterexamples
+exercise generation
+project generation
+open-ended evaluation
+mistake explanation
+Socratic questioning
+resource summarization
+domain graph extraction
+AI should NOT be the authoritative source for:
+mastery state
+learner history
+event history
+progression state
+synchronization state
+Those belong to the application.
+PART 26 — STRUCTURED AI OUTPUT
+Every AI operation should use structured schemas.
+Example:
+{
+  "explanation": "...",
+  "example": "...",
+  "exercise": {
+    "prompt": "...",
+    "difficulty": 0.68
+  },
+  "evaluation_rubric": [
+    "...",
+    "...",
+    "..."
+  ]
+}
+Use Pydantic models to validate AI responses.
+Handle malformed AI responses safely.
+PART 27 — LEARNING SESSION
+A session should work like:
+restore context
+ ↓
+show objective
+ ↓
+recommend one mission
+ ↓
+minimal explanation
+ ↓
+attempt
+ ↓
+observe
+ ↓
+evaluate
+ ↓
+diagnose
+ ↓
+update learner state
+ ↓
+select next action
+The system should not overwhelm the learner with an enormous curriculum.
+The default UI should focus on:
+What should I do now?
+PART 28 — USER INTERFACE
+Build these primary screens:
+Dashboard
+Show:
+current goal
+current domain
+current level
+current mission
+why this mission
+weak areas
+recent progress
+active projects
+exploration queue
+Learning Session
+Show:
+objective
+activity
+hints
+explanation
+submit
+feedback
+next action
+Knowledge Map
+Visualize:
+Concepts
+Skills
+Prerequisites
+Current mastery
+Weaknesses
+Use:
+strong
+developing
+weak
+unknown
+Projects
+Show:
+project goal
+required skills
+tasks
+evidence
+completion
+mastery gained
+Learner Profile
+Show how the system currently understands the learner.
+Exploration
+Show captured interests and parked topics.
+PART 29 — UX PRINCIPLES
+Do NOT make the primary interface resemble:
+Coursera
+Udemy
+traditional LMS
+chapter/lesson trees
+The primary interaction should be:
+What am I trying to achieve?
+        ↓
+What should I do now?
+        ↓
+Why?
+        ↓
+Do it.
+        ↓
+What did I learn?
+        ↓
+What's next?
+PART 30 — OFFLINE-FIRST ARCHITECTURE
+This is essential for personal Windows/Android use.
+When offline:
+The application must still allow:
+view cached domains
+view cached learner state
+start learning sessions
+complete cached activities
+write notes
+attempt assessments
+record evidence
+record events
+work on projects
+capture exploration items
+Local writes must enter an:
+Sync Queue
+Example:
+Local action
+ ↓
+SQLite
+ ↓
+Outbox event
+ ↓
+Online detected
+ ↓
+Sync API
+ ↓
+Server acknowledgement
+ ↓
+Mark event synchronized
+Never require a permanent internet connection for basic learning.
+PART 31 — SYNCHRONIZATION MODEL
+Use an event-based sync architecture.
+Do not simply overwrite entire learner records.
+Every meaningful local mutation produces an event:
+event_id
+device_id
+user_id
+timestamp
+entity_type
+entity_id
+event_type
+payload
+version
+The server maintains the authoritative event history.
+Clients maintain:
+last_server_cursor
+Synchronization:
+CLIENT
+ ↓
+upload unsynced events
+ ↓
+SERVER
+ ↓
+validate
+ ↓
+append
+ ↓
+resolve
+ ↓
+return server cursor + remote changes
+ ↓
+CLIENT
+ ↓
+apply remote events
+ ↓
+update local projections
+PART 32 — CONFLICT RESOLUTION
+Different data requires different conflict policies.
+For immutable events:
+append both
+For learner evidence:
+append both
+For profile traits:
+merge using confidence + recency + evidence
+For notes:
+version / merge
+For settings:
+last-write-wins
+Never silently discard learning evidence.
+PART 33 — DEVICE IDENTITY
+Each installation must have:
+device_id
+device_type
+platform
+app_version
+last_sync
+Examples:
+Windows desktop
+Android phone
+Web browser
+A learner may use multiple devices.
+PART 34 — WEB VERSION
+The public web version should:
+work with normal online access
+provide account authentication
+store data on the server
+support adaptive learning
+support AI
+support domain exploration
+optionally support PWA/offline caching
+The public web version should not expose private learner data.
+PART 35 — WINDOWS PERSONAL VERSION
+Package the web frontend using Tauri.
+Windows version should:
+use the same backend API
+cache selected domains
+cache learner state
+support SQLite
+work offline
+maintain local event queue
+synchronize when online
+allow larger local files
+eventually support local AI models
+PART 36 — ANDROID PERSONAL VERSION
+Build a Flutter client.
+It should:
+use the same backend API
+maintain local SQLite state
+cache active learning domains
+cache current goals
+cache activities
+store evidence offline
+synchronize automatically
+support background synchronization where platform rules permit
+Do not duplicate adaptive logic in Flutter.
+The client should consume recommendations from the backend.
+For offline mode, implement a local lightweight adaptive engine capable of continuing cached learning sessions.
+PART 37 — SHARED API
+Design REST APIs first.
+Core endpoints:
+POST   /auth/register
+POST   /auth/login
+GET    /domains
+POST   /domains
+GET    /domains/{id}
+GET    /domains/{id}/graph
+GET    /concepts/{id}
+GET    /skills/{id}
+GET    /goals
+POST   /goals
+GET    /learner/profile
+GET    /learner/domains/{id}
+GET    /learner/concepts/{id}
+GET    /learner/skills/{id}
+POST   /sessions
+GET    /sessions/{id}
+GET    /recommendations/next
+POST   /attempts
+POST   /evidence
+POST   /events
+POST   /projects
+GET    /projects/{id}
+GET    /exploration
+POST   /exploration
+POST   /ai/explain
+POST   /ai/generate-exercise
+POST   /ai/evaluate
+POST   /sync/push
+GET    /sync/pull
+Generate OpenAPI documentation automatically.
+PART 38 — AUTHENTICATION
+Implement secure authentication.
+Support:
+email/password
+refresh tokens
+secure password hashing
+device sessions
+token revocation
+logout
+account deletion
+Design the system so OAuth providers can be added later.
+PART 39 — SECURITY
+Implement:
+input validation
+authorization checks
+ownership checks
+rate limiting
+safe AI input handling
+safe file handling
+secret management
+environment variables
+audit logging for sensitive operations
+Never expose API keys to clients.
+PART 40 — DATA PRIVACY
+Learner data is private.
+A user must only access their own:
+learner state
+goals
+sessions
+evidence
+projects
+exploration
+events
+Domain knowledge may be public depending on domain status.
+Implement clear separation between public domain content and private learner state.
+PART 41 — OBSERVABILITY
+Implement structured logging.
+Track:
+API latency
+AI latency
+AI errors
+recommendation generation
+sync errors
+database errors
+learning-session errors
+Do not log sensitive learner content unnecessarily.
+PART 42 — TESTING
+Create tests for:
+Unit tests
+mastery calculation
+retention calculation
+candidate scoring
+prerequisite traversal
+action selection
+failure diagnosis
+difficulty adjustment
+conflict resolution
+Integration tests
+session lifecycle
+evidence creation
+learner state updates
+recommendation generation
+synchronization
+End-to-end tests
+Test:
+create account
+ ↓
+create goal
+ ↓
+diagnostic
+ ↓
+learning activity
+ ↓
+attempt
+ ↓
+evidence
+ ↓
+mastery update
+ ↓
+next recommendation
+Also test:
+offline
+ ↓
+perform learning
+ ↓
+reconnect
+ ↓
+sync
+ ↓
+verify server state
+PART 43 — DEVELOPMENT STRATEGY
+Do not attempt to build every feature simultaneously.
+Implement in phases.
+Phase 1 — Core backend
+Build:
+database
+models
+migrations
+auth
+domains
+concepts
+skills
+learner state
+goals
+events
+No fancy UI yet.
+Phase 2 — Adaptive Engine
+Build:
+candidate generation
+prerequisite filtering
+mastery
+retention
+scoring
+action selection
+recommendations
+Create extensive tests.
+Phase 3 — Learning Sessions
+Build:
+sessions
+activities
+attempts
+evidence
+failure diagnosis
+mastery updates
+Phase 4 — AI
+Add:
+explanation
+exercise generation
+evaluation
+project generation
+Phase 5 — Web
+Build the dashboard and learning interface.
+Phase 6 — Offline
+Add:
+SQLite
+outbox
+sync
+conflict resolution
+offline sessions
+Phase 7 — Desktop
+Package the web application with Tauri.
+Phase 8 — Android
+Build the Flutter client using the same API.
+PART 44 — MVP DEFINITION
+Do not consider the MVP complete until this works:
+A user can say:
+“I want to learn Rust.”
+Then:
+Create goal
+ ↓
+Create/import domain
+ ↓
+Generate knowledge graph
+ ↓
+Diagnostic assessment
+ ↓
+Create learner state
+ ↓
+Recommend first activity
+ ↓
+User performs activity
+ ↓
+Record evidence
+ ↓
+Update mastery
+ ↓
+Diagnose weakness
+ ↓
+Recommend next activity
+The learner must be able to repeat this loop indefinitely.
+PART 45 — INITIAL DOMAIN GENERATION
+Create an AI-assisted domain ingestion pipeline.
+Input:
+domain name
+goal
+optional resources
+optional syllabus
+optional documents
+Output:
+Domain
+Concepts
+Skills
+Relations
+Activities
+Assessments
+Projects
+But AI-generated graph data must be marked:
+source = AI
+confidence = ...
+Allow later human validation.
+PART 46 — DIAGNOSTIC ASSESSMENT
+When a user starts a new domain:
+Do not immediately teach everything.
+First perform a lightweight diagnostic.
+The diagnostic should sample:
+foundational concepts
+prerequisites
+application ability
+problem solving
+Use the results to initialize learner state.
+Unknown concepts should remain:
+mastery = unknown
+confidence = low
+Do not assume zero knowledge simply because there is no evidence.
+PART 47 — UNKNOWN VS WEAK
+This distinction is mandatory.
+These are different:
+UNKNOWN
+and:
+KNOWN BUT WEAK
+If there is no evidence:
+mastery = unknown
+confidence = low
+If evidence shows failure:
+mastery = low
+confidence = high
+The engine should test unknown concepts before spending significant learning time on them.
+PART 48 — EXPLAINABILITY
+Every recommendation must be explainable.
+Example:
+Recommended:
+Practice feature selection
+Why:
+- Your conceptual understanding is adequate.
+- Your application score is low.
+- Required prerequisites are strong.
+- It directly supports your current goal.
+- It maintains your current project context.
+Never return:
+“The AI recommends this.”
+PART 49 — FUTURE EXTENSIONS
+Design extension points for:
+spaced repetition
+Bayesian knowledge tracing
+item response theory
+reinforcement learning
+knowledge tracing models
+behavioral modeling
+local LLMs
+code execution
+browser extension
+IDE integration
+voice learning
+vision-based learning
+AR/VR
+collaborative learning
+teacher mode
+research mode
+Do not implement all of these now.
+Create clean interfaces so they can be added later.
+PART 50 — ARCHITECTURAL RULES
+Follow these rules strictly:
+Prefer modularity over premature microservices.
+Keep domain knowledge independent from learner state.
+Keep learner state independent from AI-generated content.
+Keep adaptive decisions deterministic in v1.
+Make AI provider-independent.
+Record evidence for learning claims.
+Never silently delete learning evidence.
+Treat offline events as first-class data.
+Make synchronization event-based.
+Make recommendations explainable.
+Keep API contracts platform-independent.
+Do not duplicate business logic unnecessarily across clients.
+Keep the web, Windows, and Android clients as separate presentation layers over shared backend contracts.
+Optimize for independent competence rather than content consumption.
+Prefer building and applying over passive consumption.
+Never force a learner through a fixed curriculum when evidence indicates a better path.
+Never assume an LLM is correct.
+Validate all AI-generated structured data.
+Make important algorithms configurable.
+Write tests before optimizing.
+PART 51 — CODE QUALITY
+Produce:
+clean architecture
+typed interfaces
+clear module boundaries
+meaningful names
+documentation
+comments only where useful
+migrations
+tests
+environment configuration
+Docker support
+development setup instructions
+production deployment instructions
+Avoid:
+giant files
+duplicated business logic
+hard-coded AI provider calls
+hard-coded adaptive weights
+global mutable state
+premature abstractions
+premature microservices
+fake placeholder implementations presented as complete functionality
+If something cannot be fully implemented yet, explicitly mark it as a TODO rather than pretending it works.
+PART 52 — COPILOT WORKING METHOD
+Do not generate the entire application in one response.
+Work incrementally.
+First produce:
+1. repository structure
+2. architecture document
+3. database schema
+4. backend project
+5. migrations
+6. tests
+Then implement the system phase by phase.
+After each phase:
+Run tests.
+Fix errors.
+Explain what was implemented.
+Show changed files.
+Do not rewrite working components unnecessarily.
+Continue to the next phase.
+Before making major architectural changes, inspect the existing repository.
+Never destroy existing functionality just to simplify implementation.
+PART 53 — FIRST IMPLEMENTATION TASK
+Start NOW with Phase 1.
+Create:
+adaptive-learning/
+├── frontend/
+├── backend/
+├── database/
+├── docs/
+├── docker/
+└── README.md
+Then implement the backend with:
+FastAPI
+PostgreSQL
+SQLAlchemy
+Alembic
+Pydantic
+JWT authentication
+pytest
+Implement the initial database models for:
+User
+Domain
+Concept
+Skill
+ConceptRelation
+SkillRelation
+ConceptSkill
+Goal
+LearnerProfile
+LearnerDomainState
+LearnerConceptState
+LearnerSkillState
+LearningSession
+Activity
+Attempt
+LearningEvidence
+FailureEvent
+LearningEvent
+ExplorationItem
+Project
+ProjectTask
+Create migrations.
+Create seed data for a tiny example domain such as:
+Python Programming
+with at least:
+10 concepts
+5 skills
+prerequisite relationships
+3 activities
+1 small project
+Then implement:
+POST /auth/register
+POST /auth/login
+GET /domains
+GET /domains/{id}
+GET /domains/{id}/graph
+POST /goals
+GET /goals
+GET /learner/profile
+GET /learner/domains/{id}
+GET /learner/concepts/{id}
+Write tests.
+Do not implement the adaptive engine yet.
+When Phase 1 is complete, stop and report:
+Architecture status
+Database status
+API status
+Test status
+Files created
+Known limitations
+Next phase
+Then continue to Phase 2 only after Phase 1 passes its tests.
+FINAL PRODUCT REQUIREMENT
+The finished application must eventually allow a person to open it and say:
+“I want to master this.”
+The system should then be able to answer:
+“Here is where you currently stand.”
+“Here is the smallest important gap.”
+“Here is what you should do next.”
+“Here is why.”
+“Now demonstrate that you can use it.”
+“Good. Your learner model has changed.”
+“Here is what you should do next.”
+That adaptive loop—not the UI, not the LLM, and not the technology stack—is the actual product.
+Build everything around that loop.
