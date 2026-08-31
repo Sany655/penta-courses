@@ -7,7 +7,8 @@ import {
   CreditCard, Play, Award, Zap, ArrowLeft 
 } from 'lucide-react';
 import Link from 'next/link';
-import { InteractiveBlock, BkashPaymentModal } from '@/components/student/BlockRenderers';
+import { InteractiveBlock } from '@/components/student/BlockRenderers';
+import { BkashPaymentModal } from '@/components/payment/BkashPaymentModal';
 
 export default function StructuredTrackPlayerPage({ params }) {
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
