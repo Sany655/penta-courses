@@ -25,8 +25,7 @@ ${staticPages.map(page => `  <url>
     <lastmod>${now}</lastmod>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
-  </url>`).join('
-')}
+  </url>`).join('\n')}
 </urlset>`;
 
   return new Response(xml, {
