@@ -77,6 +77,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/health", tags=["Health Check"])
+@app.get("/api/health", tags=["Health Check"], include_in_schema=False)
 def health_check():
     db_ok = False
     db_error = None

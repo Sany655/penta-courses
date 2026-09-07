@@ -26,7 +26,11 @@ export default function ServerStatusButton() {
         signal: controller.signal,
       });
       const payload = await response.json().catch(() => null);
-      setStatus(response.ok && payload?.status === 'healthy' ? 'healthy' : 'degraded');
+      if (response.status === 404) {
+        setStatus('unavailable');
+      } else {
+        setStatus(response.ok && payload?.status === 'healthy' ? 'healthy' : 'degraded');
+      }
     } catch {
       setStatus('offline');
     } finally {
@@ -45,6 +49,7 @@ export default function ServerStatusButton() {
     checking: { label: 'Checking', color: 'text-slate-300', dot: 'bg-slate-400', description: 'Checking server status' },
     healthy: { label: 'Server OK', color: 'text-emerald-400', dot: 'bg-emerald-400', description: 'Server is healthy' },
     degraded: { label: 'Degraded', color: 'text-amber-400', dot: 'bg-amber-400', description: 'Server responded, but its database is unavailable' },
+    unavailable: { label: 'API Missing', color: 'text-rose-400', dot: 'bg-rose-400', description: 'The server health route returned 404; check the API deployment route' },
     offline: { label: 'Offline', color: 'text-rose-400', dot: 'bg-rose-400', description: 'Server is unavailable' },
   }[status];
 
