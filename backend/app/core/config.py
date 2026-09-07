@@ -1,5 +1,12 @@
 ﻿import os
+from pathlib import Path
 from typing import List, Optional
+from dotenv import load_dotenv
+
+project_root = Path(__file__).resolve().parents[3]
+backend_root = Path(__file__).resolve().parents[2]
+load_dotenv(project_root / '.env', override=False)
+load_dotenv(backend_root / '.env', override=False)
 
 class Settings:
     # Business & Product Customization

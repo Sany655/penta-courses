@@ -8,7 +8,8 @@ from fastapi.responses import JSONResponse
 from backend.app.core.config import settings
 from backend.app.core.database import SessionLocal
 from backend.app.api.v1.router import api_router
-from sqlalchemy import text
+from sqlalchemy import inspect, text
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("penta.server")
@@ -65,6 +66,16 @@ async def security_and_tracing_middleware(request: Request, call_next):
 async def global_exception_handler(request: Request, exc: Exception):
     request_id = request.headers.get("X-Request-ID") or "unknown"
     logger.error(f"Unhandled Exception [req: {request_id}] on {request.method} {request.url.path}: {str(exc)}", exc_info=True)
+    if isinstance(exc, (OperationalError, ProgrammingError)):
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "error": "Database schema unavailable",
+                "message": "The database is reachable but the application schema is missing or unavailable. Run `python -m alembic upgrade head` against this database.",
+                "request_id": request_id
+            }
+        )
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
@@ -80,21 +91,29 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.get("/api/health", tags=["Health Check"], include_in_schema=False)
 def health_check():
     db_ok = False
+    schema_ready = False
     db_error = None
+    missing_tables = []
+    required_tables = {"users", "learner_profiles", "courses", "transactions", "alembic_version"}
     try:
         db = SessionLocal()
         db.execute(text("SELECT 1"))
+        existing_tables = set(inspect(db.bind).get_table_names())
+        missing_tables = sorted(required_tables - existing_tables)
         db.close()
         db_ok = True
+        schema_ready = not missing_tables
     except Exception as e:
         logger.error(f"Health check DB ping failed: {str(e)}")
         db_error = type(e).__name__
 
     return {
-        "status": "healthy" if db_ok else "degraded",
+        "status": "healthy" if db_ok and schema_ready else "degraded",
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
         "database": "connected" if db_ok else "disconnected",
+        "schema": "ready" if schema_ready else "missing_tables",
         "database_error": db_error,
+        "missing_tables": missing_tables,
         "app_name": settings.APP_NAME
     }
