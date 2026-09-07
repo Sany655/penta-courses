@@ -83,41 +83,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Founder Track Offer Card */}
-        <div className="max-w-4xl mx-auto rounded-3xl border-2 border-emerald-500 bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-10 mb-20 text-left relative overflow-hidden shadow-xl dark:shadow-2xl shadow-emerald-500/10">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <span className="px-3 py-1 rounded-full bg-emerald-500 text-slate-950 font-bold text-[10px] uppercase tracking-wider mb-2 inline-block">
-                Limited Early Cohort
-              </span>
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Founder Track Pass — $29 One-Time</h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Available for the first 100 learners per specialized course track (or 3,300 BDT via bKash).</p>
-            </div>
-            <div className="text-left sm:text-right">
-              <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">$29</div>
-              <div className="text-[11px] text-slate-400 dark:text-slate-500 line-through">Regular $49.99</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-700 dark:text-slate-200 mb-8 pt-4 border-t border-slate-200 dark:border-slate-800/80">
-            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Full lifetime access to your chosen Course Track</div>
-            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Fast-Track Module Bypass Exams included</div>
-            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Cryptographic SHA-256 Verified Graduation Certificate</div>
-            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Direct feedback access to early founder cohorts</div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <Link
-              href="/pricing"
-              onClick={() => trackEvent('cta_click', { cta: 'claim_founder_pass' })}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 text-center transition-all"
-            >
-              Claim Founder Track Pass ($29)
-            </Link>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">Genuine limit of 100 slots per domain track.</span>
-          </div>
-        </div>
-
         {/* 3 Core Pillar Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
           <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-emerald-500/40 transition-all shadow-sm">

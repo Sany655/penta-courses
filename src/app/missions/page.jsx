@@ -30,35 +30,6 @@ export default function AdaptiveMissionsPage() {
     startNewMission();
   }, [user, router]);
 
-  const fallbackMission = {
-    activity_id: 'act-med-101',
-    title: 'DKA Causal Pathway & Electrolyte Cascades',
-    activity_type: 'PRACTICE',
-    archetype: 'causal_graph',
-    difficulty: 0.8,
-    concept: {
-      id: 'c-dka',
-      name: 'Diabetic Ketoacidosis (DKA) Pathogenesis',
-      domain: 'Clinical Medicine & Differential Pathophysiology'
-    },
-    explainability: {
-      primary_reason: 'Highest-impact knowledge frontier concept required for Acute Resuscitation goal.',
-      formula_factors: {
-        goal_relevance: '95%',
-        knowledge_gap: '80%',
-        prereq_readiness: '100%',
-        retention_urgency: 'Low'
-      }
-    },
-    data_json: {
-      nodes: [
-        { id: '1', label: 'Absolute Insulin Deficiency', state: 'Active', effect: 'Unchecked lipolysis and hepatic gluconeogenesis' },
-        { id: '2', label: 'Accumulation of Acetoacetate & Beta-Hydroxybutyrate', state: 'Cascading', effect: 'HAGMA consumption of bicarbonate buffer' },
-        { id: '3', label: 'Osmotic Diuresis & Total-Body Potassium Depletion', state: 'Critical', effect: 'Dehydration and shift-dependent cardiac arrhythmia' }
-      ]
-    }
-  };
-
   const startNewMission = async () => {
     setLoading(true);
     setFeedback(null);
@@ -66,7 +37,7 @@ export default function AdaptiveMissionsPage() {
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
     if (!token) {
-      setMission(fallbackMission);
+      setMission(null);
       setLoading(false);
       return;
     }
@@ -81,7 +52,7 @@ export default function AdaptiveMissionsPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ domain_id: 'clinical-medicine' })
+          body: JSON.stringify({})
         });
         if (startRes.ok) {
           currentSession = await startRes.json();
@@ -96,26 +67,27 @@ export default function AdaptiveMissionsPage() {
         });
         if (missionRes.ok) {
           const rec = await missionRes.json();
-          setMission({
-            activity_id: rec.activity_id || 'adaptive-act',
-            title: rec.activity?.title || rec.concept?.name || 'Autonomous Frontier Exploration',
-            activity_type: rec.action_type || 'PRACTICE',
-            archetype: rec.activity?.archetype || 'causal_graph',
-            difficulty: rec.activity?.difficulty || 0.75,
-            concept: rec.concept || { name: 'Pathophysiology Frontier', domain: 'Clinical Medicine' },
-            explainability: rec.explainability || fallbackMission.explainability,
-            data_json: rec.activity?.data_json || fallbackMission.data_json
-          });
-          setLoading(false);
-          return;
+          if (rec && (rec.activity || rec.concept)) {
+            setMission({
+              activity_id: rec.activity_id || 'adaptive-act',
+              title: rec.activity?.title || rec.concept?.name || 'Autonomous Frontier Exploration',
+              activity_type: rec.action_type || 'PRACTICE',
+              archetype: rec.activity?.archetype || 'causal_graph',
+              difficulty: rec.activity?.difficulty || 0.75,
+              concept: rec.concept || { name: 'Pathophysiology Frontier', domain: 'Adaptive' },
+              explainability: rec.explainability || null,
+              data_json: rec.activity?.data_json || {}
+            });
+            setLoading(false);
+            return;
+          }
         }
       }
 
-      setMission(fallbackMission);
+      setMission(null);
       setLoading(false);
-    } catch (err) {
-      console.warn('Adaptive mission sync notice, using offline block:', err);
-      setMission(fallbackMission);
+    } catch {
+      setMission(null);
       setLoading(false);
     }
   };
@@ -217,27 +189,37 @@ export default function AdaptiveMissionsPage() {
             <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin" />
             <p className="text-sm text-slate-400 font-medium font-mono">Calibrating Knowledge Frontier & Cognitive Archetype...</p>
           </div>
+        ) : !mission ? (
+          <div className="p-16 text-center border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 font-mono space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
+              <Compass className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">No Active Adaptive Missions</h3>
+            <p className="text-xs max-w-md mx-auto text-slate-600 dark:text-slate-400 leading-relaxed">
+              No knowledge frontiers are currently active in the database. Once courses and concepts are published in the AI Admin Studio, your adaptive mission loop will calibrate.
+            </p>
+          </div>
         ) : (
           <div className="space-y-6">
             
             {/* Target Card */}
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
+                  <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-mono">
                     {mission?.activity_type || 'PRACTICE'}
                   </span>
-                  <span className="text-xs text-slate-400 font-mono">Difficulty: {Math.round((mission?.difficulty || 0.7) * 100)}%</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">Difficulty: {Math.round((mission?.difficulty || 0.7) * 100)}%</span>
                 </div>
-                <h2 className="text-xl font-bold text-white">{mission?.title}</h2>
-                <p className="text-xs text-slate-400">Target Concept: <span className="text-slate-200 font-semibold">{mission?.concept?.name}</span></p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{mission?.title}</h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Target Concept: <span className="text-slate-900 dark:text-slate-200 font-semibold">{mission?.concept?.name}</span></p>
               </div>
 
               {masteryGain !== 0 && (
                 <div className={`px-4 py-2 rounded-xl border text-xs font-bold font-mono flex items-center gap-2 ${
                   masteryGain > 0 
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
-                    : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                    : 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
                 }`}>
                   <Zap className="w-4 h-4" />
                   <span>{masteryGain > 0 ? `+${Math.round(masteryGain * 100)}%` : `${Math.round(masteryGain * 100)}%`} Mastery Delta</span>
@@ -246,12 +228,12 @@ export default function AdaptiveMissionsPage() {
             </div>
 
             {/* Cognitive Block Canvas */}
-            <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur min-h-[360px]">
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 backdrop-blur min-h-[360px]">
               <InteractiveBlock 
                 block={{
                   id: mission?.activity_id || 'act-1',
                   type: mission?.archetype || 'causal_graph',
-                  data: mission?.data_json || fallbackMission.data_json
+                  data: mission?.data_json || {}
                 }}
                 onEvidence={handleEvidence}
               />

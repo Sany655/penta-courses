@@ -21,46 +21,6 @@ export default function ProjectsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [evalResult, setEvalResult] = useState(null);
 
-  const fallbackProjects = [
-    {
-      id: 'proj-med-1',
-      title: 'Clinical Emergency Resuscitation Orchestrator',
-      description: 'Implement a deterministic state machine modeling acute DKA fluid and electrolyte replacement with continuous osmolarity recalculation.',
-      status: 'IN_PROGRESS',
-      tasks: [
-        {
-          id: 'task-1',
-          title: 'ABG Anion Gap Calculation Algorithm',
-          description: 'Implement pure function calculating serum anion gap with albumin correction.',
-          status: 'COMPLETED',
-          score: 1.0
-        },
-        {
-          id: 'task-2',
-          title: 'Dynamic Potassium Replacement Curve',
-          description: 'Implement safety interlock preventing insulin infusion if serum K+ is below 3.3 mEq/L.',
-          status: 'PENDING',
-          score: null
-        }
-      ]
-    },
-    {
-      id: 'proj-sys-1',
-      title: 'High-Throughput AsyncIO Redis Redlock Manager',
-      description: 'Design distributed mutual exclusion primitive with TTL heartbeats and jittered retry backoff in CPython.',
-      status: 'NOT_STARTED',
-      tasks: [
-        {
-          id: 'task-3',
-          title: 'Distributed Redlock Clock Drift Bound Verification',
-          description: 'Calculate validity window accounting for network partition latency and system clock skew.',
-          status: 'PENDING',
-          score: null
-        }
-      ]
-    }
-  ];
-
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
     if (!token && !user) {
@@ -74,19 +34,15 @@ export default function ProjectsPage() {
       })
         .then(res => res.ok ? res.json() : [])
         .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
-            setProjects(data);
-          } else {
-            setProjects(fallbackProjects);
-          }
+          setProjects(Array.isArray(data) ? data : []);
           setLoading(false);
         })
         .catch(() => {
-          setProjects(fallbackProjects);
+          setProjects([]);
           setLoading(false);
         });
     } else {
-      setProjects(fallbackProjects);
+      setProjects([]);
       setLoading(false);
     }
   }, [user, router]);
@@ -165,18 +121,33 @@ export default function ProjectsPage() {
         </header>
 
         {/* Project List */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1 space-y-4">
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wide font-mono">
-              Active Capstones ({projects.length})
-            </h2>
+        {loading ? (
+          <div className="p-12 text-center border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900/40 text-slate-500 font-mono text-xs">
+            Loading Capstone Projects...
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="p-16 text-center border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 font-mono space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mx-auto">
+              <FolderGit2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">No Capstone Projects Published</h3>
+            <p className="text-xs max-w-md mx-auto text-slate-600 dark:text-slate-400 leading-relaxed">
+              No engineering capstones are active in the catalog yet. When you create or import projects from the AI Admin Studio, they will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-1 space-y-4">
+              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide font-mono">
+                Active Capstones ({projects.length})
+              </h2>
 
-            <div className="space-y-3">
-              {projects.map(proj => (
-                <div
-                  key={proj.id}
-                  className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/40 transition space-y-3 shadow-lg"
-                >
+              <div className="space-y-3">
+                {projects.map(proj => (
+                  <div
+                    key={proj.id}
+                    className="p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 transition space-y-3 shadow-md dark:shadow-lg"
+                  >
                   <div>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
                       {proj.status}
@@ -281,6 +252,7 @@ export default function ProjectsPage() {
             )}
           </div>
         </div>
+        )}
 
       </div>
     </div>

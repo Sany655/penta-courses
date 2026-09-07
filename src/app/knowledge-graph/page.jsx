@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,81 +8,106 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const DOMAINS = [
-  { id: 'med', name: 'Clinical Medicine', slug: 'clinical-medicine' },
-  { id: 'law', name: 'Constitutional Law', slug: 'constitutional-law' },
-  { id: 'econ', name: 'Macroeconomics & Finance', slug: 'macro-finance' },
-  { id: 'py', name: 'Python Systems Architecture', slug: 'python-systems' }
-];
-
-const GRAPH_DATA = {
-  med: [
-    { id: 'c1', name: 'Arterial Blood Gas Analysis', state: 'MASTERED', mastery: 0.92, type: 'FOUNDATION', prereqs: [] },
-    { id: 'c2', name: 'Anion Gap Calculation', state: 'MASTERED', mastery: 0.88, type: 'FOUNDATION', prereqs: ['c1'] },
-    { id: 'c3', name: 'High Anion Gap Acidosis (HAGMA)', state: 'FRONTIER', mastery: 0.65, type: 'DIAGNOSTIC', prereqs: ['c2'] },
-    { id: 'c4', name: 'Diabetic Ketoacidosis Pathogenesis', state: 'WEAK', mastery: 0.42, type: 'THEORY', prereqs: ['c3'] },
-    { id: 'c5', name: 'Acute DKA Resuscitation Protocol', state: 'LOCKED', mastery: 0.0, type: 'TECHNIQUE', prereqs: ['c4'] }
-  ],
-  law: [
-    { id: 'l1', name: 'Judicial Review & Standing', state: 'MASTERED', mastery: 0.95, type: 'FOUNDATION', prereqs: [] },
-    { id: 'l2', name: 'Equal Protection Clause', state: 'FRONTIER', mastery: 0.68, type: 'THEORY', prereqs: ['l1'] },
-    { id: 'l3', name: 'Strict Scrutiny Adjudication', state: 'LOCKED', mastery: 0.0, type: 'TECHNIQUE', prereqs: ['l2'] }
-  ],
-  econ: [
-    { id: 'e1', name: 'Central Bank Policy Rates', state: 'MASTERED', mastery: 0.85, type: 'FOUNDATION', prereqs: [] },
-    { id: 'e2', name: 'Yield Curve Term Structure', state: 'FRONTIER', mastery: 0.70, type: 'THEORY', prereqs: ['e1'] }
-  ],
-  py: [
-    { id: 'p1', name: 'CPython GIL Mechanics', state: 'MASTERED', mastery: 0.90, type: 'FOUNDATION', prereqs: [] },
-    { id: 'p2', name: 'AsyncIO Event Loops', state: 'FRONTIER', mastery: 0.62, type: 'THEORY', prereqs: ['p1'] },
-    { id: 'p3', name: 'Distributed Redlock Consensus', state: 'LOCKED', mastery: 0.0, type: 'TECHNIQUE', prereqs: ['p2'] }
-  ]
-};
-
 export default function KnowledgeGraphPage() {
-  const [selectedDomain, setSelectedDomain] = useState('med');
-  const [selectedConcept, setSelectedConcept] = useState(GRAPH_DATA['med'][2]);
+  const [domains, setDomains] = useState([]);
+  const [selectedDomain, setSelectedDomain] = useState(null);
+  const [nodes, setNodes] = useState([]);
+  const [selectedConcept, setSelectedConcept] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const nodes = GRAPH_DATA[selectedDomain] || [];
+  useEffect(() => {
+    fetch('/api/v1/domains')
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        const domainList = Array.isArray(data) ? data : [];
+        setDomains(domainList);
+        if (domainList.length > 0) {
+          const first = domainList[0];
+          setSelectedDomain(first.id);
+          loadGraph(first.id);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        setDomains([]);
+        setLoading(false);
+      });
+  }, []);
+
+  const loadGraph = (domainId) => {
+    fetch(`/api/v1/domains/${domainId}/graph`)
+      .then(res => res.ok ? res.json() : { nodes: [] })
+      .then(graph => {
+        const graphNodes = graph.nodes || [];
+        setNodes(graphNodes);
+        setSelectedConcept(graphNodes[0] || null);
+        setLoading(false);
+      })
+      .catch(() => {
+        setNodes([]);
+        setSelectedConcept(null);
+        setLoading(false);
+      });
+  };
+
+  const handleSelectDomain = (domainId) => {
+    setSelectedDomain(domainId);
+    setLoading(true);
+    loadGraph(domainId);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-6 md:p-10 pt-20 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
           <div>
-            <div className="flex items-center gap-2 text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-1">
+            <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-1 font-mono">
               <Network className="w-4 h-4" /> Multi-Domain Knowledge Graph Engine
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Autonomous Conceptual Topology
             </h1>
           </div>
 
           {/* Domain Switcher */}
-          <div className="flex flex-wrap gap-2">
-            {DOMAINS.map(d => (
-              <button
-                key={d.id}
-                onClick={() => {
-                  setSelectedDomain(d.id);
-                  setSelectedConcept(GRAPH_DATA[d.id][0]);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  selectedDomain === d.id
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {d.name}
-              </button>
-            ))}
-          </div>
+          {domains.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {domains.map(d => (
+                <button
+                  key={d.id}
+                  onClick={() => handleSelectDomain(d.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    selectedDomain === d.id
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {d.name}
+                </button>
+              ))}
+            </div>
+          )}
         </header>
 
-        {/* Graph & Inspector Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {loading ? (
+          <div className="p-12 text-center border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900/40 text-slate-500 font-mono text-xs">
+            Loading Conceptual Topologies...
+          </div>
+        ) : domains.length === 0 ? (
+          <div className="p-16 text-center border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 font-mono space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
+              <Network className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">No Conceptual Topologies Mapped Yet</h3>
+            <p className="text-xs max-w-md mx-auto text-slate-600 dark:text-slate-400 leading-relaxed">
+              No knowledge domains or concept DAG nodes exist in the database. When you create domains and concept relations in the Knowledge Graph Studio, they will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Visual Graph Canvas */}
           <div className="lg:col-span-2 p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-6">
@@ -200,6 +225,7 @@ export default function KnowledgeGraphPage() {
           </div>
 
         </div>
+        )}
 
       </div>
     </div>
