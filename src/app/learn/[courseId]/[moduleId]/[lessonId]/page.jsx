@@ -10,7 +10,6 @@ import {
 import { useAuth } from '../../../../../context/AuthContext';
 import { useTheme } from '../../../../../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
-import coursesData from '../../../../../data/courses.json';
 import { 
   MarkdownBlock, 
   AnimatedTerminal, 
@@ -36,18 +35,38 @@ export default function LearningWorkspace({ params }) {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    const foundCourse = coursesData.find(c => c.id === courseId || c.slug === courseId);
-    if (foundCourse) {
-      setCourse(foundCourse);
-      const foundModule = foundCourse.modules.find(m => m.id === moduleId) || foundCourse.modules[0];
-      if (foundModule) {
-        setModule(foundModule);
-        const foundLesson = foundModule.lessons.find(l => l.id === lessonId) || foundModule.lessons[0];
-        if (foundLesson) {
-          setLesson(foundLesson);
+    fetch(`/api/v1/courses/${courseId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(foundCourse => {
+        if (foundCourse) {
+          setCourse(foundCourse);
+          const foundModule = (foundCourse.modules || []).find(m => m.id === moduleId) || foundCourse.modules?.[0];
+          if (foundModule) {
+            setModule(foundModule);
+            const foundLesson = (foundModule.lessons || []).find(l => l.id === lessonId) || foundModule.lessons?.[0];
+            if (foundLesson) {
+              setLesson(foundLesson);
+            }
+          }
+        } else {
+          // fallback query to list
+          fetch('/api/v1/courses')
+            .then(r => r.ok ? r.json() : [])
+            .then(list => {
+              const matched = list.find(c => c.id === courseId || c.slug === courseId) || list[0];
+              if (matched) {
+                setCourse(matched);
+                const mod = (matched.modules || []).find(m => m.id === moduleId) || matched.modules?.[0];
+                if (mod) {
+                  setModule(mod);
+                  const les = (mod.lessons || []).find(l => l.id === lessonId) || mod.lessons?.[0];
+                  if (les) setLesson(les);
+                }
+              }
+            });
         }
-      }
-    }
+      })
+      .catch(() => {});
   }, [courseId, moduleId, lessonId]);
 
   // Resizer dragging handlers
@@ -99,13 +118,15 @@ export default function LearningWorkspace({ params }) {
   }
 
   // Check if module is unlocked for current student
-  const isModuleUnlocked = user.unlockedModules.includes(module.id);
-  const currentModuleIndex = course.modules.findIndex(m => m.id === module.id);
-  const nextModule = course.modules[currentModuleIndex + 1];
+  const unlockedModules = user?.unlockedModules || ['module-1', 'mod-1'];
+  const isModuleUnlocked = unlockedModules.includes(module.id);
+  const currentModuleIndex = (course.modules || []).findIndex(m => m.id === module.id);
+  const nextModule = (course.modules || [])[currentModuleIndex + 1];
+  const quiz = module.quiz_json?.questions ? module.quiz_json : module.quiz;
 
   const handleQuizPassed = () => {
-    if (module.quiz) {
-      recordQuizSuccess(module.quiz.id, nextModule ? nextModule.id : module.id);
+    if (quiz) {
+      recordQuizSuccess(quiz.id || 'quiz-gatekeeper', nextModule ? nextModule.id : module.id);
     }
   };
 
@@ -113,8 +134,9 @@ export default function LearningWorkspace({ params }) {
     bypassModuleWithPayment(nextModule ? nextModule.id : module.id);
   };
 
-  const theoryBlocks = lesson.blocks.filter(b => b.type === 'markdown');
-  const interactiveBlocks = lesson.blocks.filter(b => b.type !== 'markdown');
+  const allBlocks = lesson.content_blocks?.length ? lesson.content_blocks : (lesson.blocks || []);
+  const theoryBlocks = allBlocks.filter(b => b.type === 'markdown');
+  const interactiveBlocks = allBlocks.filter(b => b.type !== 'markdown');
 
   return (
     <div className="flex flex-col h-screen w-full bg-[#05070a] text-slate-200 select-none overflow-hidden font-sans">
@@ -179,26 +201,26 @@ export default function LearningWorkspace({ params }) {
 
           <div className="hidden sm:flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-xs font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
-            <span className="text-slate-300 font-medium">{user.role}</span>
+            <span className="text-slate-300 font-medium">{user?.role || 'USER'}</span>
           </div>
 
           {nextModule && (
             <button
               onClick={() => {
-                if (user.unlockedModules.includes(nextModule.id)) {
+                if (unlockedModules.includes(nextModule.id)) {
                   router.push(`/learn/${course.id}/${nextModule.id}/${nextModule.lessons[0].id}`);
                 } else {
                   alert('Phase locked! Pass the Gatekeeper Assessment or Pay Bypass to unlock.');
                 }
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-                user.unlockedModules.includes(nextModule.id)
+                unlockedModules.includes(nextModule.id)
                   ? 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
                   : 'bg-slate-900 border border-slate-800 text-slate-500 hover:text-slate-300'
               }`}
             >
               <span>Next Phase</span>
-              {user.unlockedModules.includes(nextModule.id) ? (
+              {unlockedModules.includes(nextModule.id) ? (
                 <ChevronRight className="w-4 h-4" />
               ) : (
                 <Lock className="w-3.5 h-3.5 text-amber-500" />
@@ -235,10 +257,10 @@ export default function LearningWorkspace({ params }) {
             ))}
 
             {/* Render Gatekeeper Quiz if Module has one */}
-            {module.quiz && (
+            {quiz && (
               <div className="pt-8 mt-12 border-t border-slate-800">
                 <QuizGatekeeper 
-                  quiz={module.quiz}
+                  quiz={quiz}
                   moduleTitle={module.title}
                   moduleId={nextModule ? nextModule.id : module.id}
                   onQuizPass={handleQuizPassed}

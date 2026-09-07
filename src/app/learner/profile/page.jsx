@@ -1,55 +1,133 @@
-﻿'use client';
+'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, Brain, Compass, Sparkles, Target, Zap, Clock, 
   CheckCircle2, Flame, ArrowUpRight, Award, Layers 
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LearnerProfilePage() {
-  const [activeTab, setActiveTab] = useState('radar');
+  const { user } = useAuth();
+  const router = useRouter();
 
-  const curiositySignals = [
-    { id: '1', title: 'Quantum Biology Mechanisms in Enzyme Catalysis', domain: 'Medicine', score: 0.85, mentions: 3 },
-    { id: '2', title: 'Distributed Raft Consensus in Low-Latency Storage', domain: 'Python Systems', score: 0.72, mentions: 2 },
-    { id: '3', title: 'Constitutional Standard for Algorithmic Due Process', domain: 'Law', score: 0.60, mentions: 1 }
-  ];
+  const [profile, setProfile] = useState(null);
+  const [curiositySignals, setCuriositySignals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
+    if (!token && !user) {
+      router.push('/auth');
+      return;
+    }
+
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    Promise.all([
+      fetch('/api/v1/learner/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => res.ok ? res.json() : null),
+      fetch('/api/v1/curiosity/radar', {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => res.ok ? res.json() : [])
+    ]).then(([profileData, radarData]) => {
+      if (profileData) setProfile(profileData);
+      if (Array.isArray(radarData) && radarData.length > 0) {
+        setCuriositySignals(radarData);
+      } else {
+        setCuriositySignals([
+          { id: '1', title: 'Quantum Biology Mechanisms in Enzyme Catalysis', domain: 'Clinical Medicine', interest_score: 0.85 },
+          { id: '2', title: 'Distributed Raft Consensus in Low-Latency Storage', domain: 'Python Systems', interest_score: 0.72 },
+          { id: '3', title: 'Constitutional Standard for Algorithmic Due Process', domain: 'Constitutional Law', interest_score: 0.60 }
+        ]);
+      }
+      setLoading(false);
+    }).catch(() => {
+      setLoading(false);
+    });
+  }, [user, router]);
 
   const reviewQueue = [
-    { id: 'r1', concept: 'Arterial Blood Gas Analysis', domain: 'Medicine', decay: '82% Retention', due: 'Today' },
-    { id: 'r2', concept: 'Central Bank Policy Rates', domain: 'Finance', decay: '76% Retention', due: 'Tomorrow' }
+    { id: 'r1', concept: 'Arterial Blood Gas Analysis', domain: 'Clinical Medicine', decay: '82% Retention', due: 'Today' },
+    { id: 'r2', concept: 'Central Bank Policy Rates', domain: 'Macroeconomics', decay: '76% Retention', due: 'Tomorrow' }
   ];
 
+  const handlePromoteToGoal = async (item) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
+    if (!token) return;
+
+    try {
+      const res = await fetch('/api/v1/goals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: item.title,
+          domain_id: 'clinical-medicine',
+          description: `Goal promoted from curiosity radar: ${item.title}`,
+          target_level: 'L3'
+        })
+      });
+
+      if (res.ok) {
+        setNotice(`Goal activated: "${item.title}" added to mission queue.`);
+        setTimeout(() => setNotice(''), 4000);
+      }
+    } catch (err) {
+      console.error('Goal promotion error:', err);
+    }
+  };
+
+  const displayName = user?.name || user?.full_name || 'Alex Rivera';
+  const userInitials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'LR';
+  const learningMode = profile?.learning_mode || 'HYBRID';
+  const challengeLevel = profile ? Math.round((profile.challenge_preference || 0.75) * 100) : 75;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 pt-20">
       <div className="max-w-5xl mx-auto space-y-8">
         
+        {notice && (
+          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{notice}</span>
+          </div>
+        )}
+
         {/* Profile Card */}
         <header className="p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/40 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xl">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold text-2xl">
-              AR
+            <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold text-2xl font-mono">
+              {userInitials}
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-white">Alex Rivera</h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase">
-                  Hybrid Explorer (L3)
+                <h1 className="text-2xl font-bold text-white">{displayName}</h1>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase font-mono">
+                  {learningMode} Explorer (L3)
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Adaptive Decision Matrix active across 4 Multi-Domain Graphs</p>
+              <p className="text-xs text-slate-400">Adaptive Decision Matrix active across 4 Multi-Domain Knowledge Graphs</p>
             </div>
           </div>
 
           <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6">
             <div>
-              <div className="text-xs text-slate-500 uppercase font-semibold">Mastered Concepts</div>
-              <div className="text-2xl font-bold text-white">18</div>
+              <div className="text-xs text-slate-500 uppercase font-semibold font-mono">Challenge Bias</div>
+              <div className="text-2xl font-bold text-white">{challengeLevel}%</div>
             </div>
             <div>
-              <div className="text-xs text-slate-500 uppercase font-semibold">Frontier Velocity</div>
+              <div className="text-xs text-slate-500 uppercase font-semibold font-mono">Frontier Velocity</div>
               <div className="text-2xl font-bold text-emerald-400">+14%</div>
             </div>
           </div>
@@ -133,13 +211,14 @@ export default function LearnerProfilePage() {
               <div key={c.id} className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-                    <span>{c.domain}</span>
-                    <span className="text-indigo-400 font-bold font-mono">Interest: {Math.round(c.score * 100)}%</span>
+                    <span>{c.domain || 'Multi-Domain'}</span>
+                    <span className="text-indigo-400 font-bold font-mono">Interest: {Math.round((c.interest_score || 0.7) * 100)}%</span>
                   </div>
                   <h3 className="text-sm font-bold text-slate-200">{c.title}</h3>
                 </div>
 
                 <button
+                  onClick={() => handlePromoteToGoal(c)}
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold hover:bg-indigo-600/20 transition"
                 >
                   <Target className="w-3.5 h-3.5" /> Promote to Goal

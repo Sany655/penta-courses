@@ -5,12 +5,13 @@ from sqlalchemy.orm import relationship
 from backend.app.core.database import Base
 
 class UserRole:
-    STUDENT = 'STUDENT'
-    INSTRUCTOR = 'INSTRUCTOR'
-    CONTENT_ADMIN = 'CONTENT_ADMIN'
-    AI_ADMIN = 'AI_ADMIN'
-    COMMERCE_ADMIN = 'COMMERCE_ADMIN'
-    SUPER_ADMIN = 'SUPER_ADMIN'
+    ADMIN = 'ADMIN'
+    USER = 'USER'
+    GUEST = 'GUEST'
+    
+    # Aliases for compatibility
+    SUPER_ADMIN = 'ADMIN'
+    STUDENT = 'USER'
 
 class User(Base):
     __tablename__ = 'users'
@@ -19,7 +20,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=True)
-    role = Column(String(50), default=UserRole.STUDENT, nullable=False)
+    role = Column(String(50), default=UserRole.USER, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

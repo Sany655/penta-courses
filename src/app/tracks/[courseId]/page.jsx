@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { motion } from 'framer-motion';
 import { 
   BookOpen, CheckCircle2, Lock, Sparkles, ChevronRight, 
@@ -11,81 +11,69 @@ import { InteractiveBlock } from '@/components/student/BlockRenderers';
 import { BkashPaymentModal } from '@/components/payment/BkashPaymentModal';
 
 export default function StructuredTrackPlayerPage({ params }) {
+  const { courseId } = use(params);
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
   const [activeLessonIndex, setActiveLessonIndex] = useState(0);
   const [showBypassModal, setShowBypassModal] = useState(false);
   const [bypassedModules, setBypassedModules] = useState({});
 
-  const track = {
-    title: 'Clinical Diagnostics & Acute Resuscitation Track',
-    domain: 'Clinical Medicine',
-    modules: [
-      {
-        id: 'mod-1',
-        title: 'Module 01: Arterial Blood Gas & Acid-Base Physiology',
-        is_locked: false,
-        is_bypassed: !!bypassedModules['mod-1'],
-        bypass_fee: 4.99,
-        lessons: [
-          {
-            id: 'l1',
-            title: '1.1 Principles of Henderson-Hasselbalch Equilibrium',
-            block: {
-              type: 'sequence_engine',
-              title: 'Henderson-Hasselbalch Step-Through Dynamics',
-              data: {
-                steps: [
-                  { action: 'Measure Arterial pH and PaCO2', rationale: 'Establish primary acid-base disturbance.' },
-                  { action: 'Calculate Serum Bicarbonate', rationale: 'Differentiate metabolic from respiratory etiology.' }
-                ]
-              }
-            }
-          },
-          {
-            id: 'l2',
-            title: '1.2 Anion Gap Calculation and Unmeasured Anions',
-            block: {
-              type: 'variable_sandbox',
-              title: 'Anion Gap Parameter Tuning',
-              data: {
-                labelA: 'Sodium Concentration (mEq/L)',
-                labelB: 'Chloride + Bicarbonate (mEq/L)',
-                initialA: 140,
-                initialB: 128,
-                targetOutput: 12
-              }
-            }
-          }
-        ]
-      },
-      {
-        id: 'mod-2',
-        title: 'Module 02: Diabetic Ketoacidosis & Acute Fluid Resuscitation',
-        is_locked: !bypassedModules['mod-1'],
-        is_bypassed: !!bypassedModules['mod-2'],
-        bypass_fee: 7.99,
-        lessons: [
-          {
-            id: 'l3',
-            title: '2.1 DKA Causal Cascade Perturbation',
-            block: {
-              type: 'causal_graph',
-              title: 'DKA Causal Network',
-              data: {
-                nodes: [
-                  { id: '1', label: 'Insulin Deficiency', state: 'Active', effect: 'Hyperglycemia and Lipolysis' },
-                  { id: '2', label: 'Beta-Hydroxybutyrate Excess', state: 'Cascading', effect: 'Metabolic Acidosis' }
-                ]
-              }
-            }
-          }
-        ]
-      }
-    ]
-  };
+  useEffect(() => {
+    fetch(`/api/v1/courses/${courseId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          setCourse(data);
+          setLoading(false);
+        } else {
+          fetch('/api/v1/courses')
+            .then(r => r.ok ? r.json() : [])
+            .then(list => {
+              const matched = list.find(c => c.id === courseId || c.slug === courseId) || list[0];
+              setCourse(matched || null);
+              setLoading(false);
+            })
+            .catch(() => setLoading(false));
+        }
+      })
+      .catch(() => setLoading(false));
+  }, [courseId]);
 
-  const activeModule = track.modules[activeModuleIndex] || track.modules[0];
-  const activeLesson = activeModule.lessons[activeLessonIndex] || activeModule.lessons[0];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 p-10 flex items-center justify-center font-mono">
+        <div className="flex items-center gap-3 text-slate-400">
+          <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span>Loading track curriculum from cluster...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 p-10 max-w-4xl mx-auto text-center font-mono">
+        <p className="text-slate-400">Course track not found.</p>
+        <Link href="/courses" className="mt-4 inline-block text-indigo-400 underline text-xs">
+          Return to Catalog
+        </Link>
+      </div>
+    );
+  }
+
+  const track = course;
+  const modules = track.modules || [];
+  const activeModule = modules[activeModuleIndex] || modules[0] || { id: 'mod-1', title: 'Module 01', lessons: [] };
+  const lessons = activeModule.lessons || [];
+  const activeLesson = lessons[activeLessonIndex] || lessons[0] || { id: 'l1', title: 'Lesson 1.1' };
+  const activeBlock = activeLesson.block || (activeLesson.content_blocks || []).find(b => b.type !== 'markdown') || activeLesson.content_blocks?.[0] || activeLesson.blocks?.[0] || {
+    type: 'sequence_engine',
+    title: activeLesson.title || 'Interactive Exploration',
+    data: { steps: [{ action: 'Analyze Concept', rationale: 'Understanding foundation principles.' }] }
+  };
+  const bypassFeeCents = activeModule.bypass_fee_in_cents || 299;
+  const bypassFeeDollars = (bypassFeeCents / 100).toFixed(2);
 
   const handleBypassSuccess = () => {
     setBypassedModules(prev => ({ ...prev, [activeModule.id]: true }));
@@ -200,7 +188,7 @@ export default function StructuredTrackPlayerPage({ params }) {
             {/* Cognitive Block Viewer */}
             <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 shadow-xl">
               <InteractiveBlock
-                block={activeLesson.block}
+                block={activeBlock}
                 onEvidence={(ev) => console.log('Structured track evidence emitted:', ev)}
               />
             </div>
@@ -213,8 +201,8 @@ export default function StructuredTrackPlayerPage({ params }) {
           <BkashPaymentModal
             course={{
               title: activeModule.title,
-              bdtPrice: Math.round(activeModule.bypass_fee * 120),
-              originalBdtPrice: Math.round(activeModule.bypass_fee * 150)
+              bdtPrice: Math.round(bypassFeeDollars * 120),
+              originalBdtPrice: Math.round(bypassFeeDollars * 150)
             }}
             onSuccess={handleBypassSuccess}
             onClose={() => setShowBypassModal(false)}

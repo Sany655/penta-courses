@@ -10,6 +10,7 @@ The platform is implemented as a working hybrid adaptive-learning application wi
 - Fixed-header spacing and server health indicator.
 - Backend-owned JWT registration, login, session restore, and logout.
 - Server-controlled roles; public registration always creates `STUDENT`.
+- Simplified MVP RBAC with only `STUDENT` and `SUPER_ADMIN`; all admin APIs require `SUPER_ADMIN`.
 - FastAPI adaptive learning, goals, sessions, tracks, projects, telemetry, sync, and generator route groups.
 - SQLAlchemy relational model set for identity, content, learner state, sessions, evidence, commerce, certificates, audit, events, and inquiries.
 - Persistent inquiries and manual bKash transaction review.

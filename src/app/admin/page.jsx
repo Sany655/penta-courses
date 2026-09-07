@@ -5,17 +5,27 @@ import {
   Shield, Sparkles, LayoutDashboard,
   FileCode2, Smartphone, Trash2, CheckCircle2,
   Search, XCircle, UserCheck, Plus, Check,
-  MessageSquare, Mail, Clock, CheckCheck
+  MessageSquare, Mail, Clock, CheckCheck,
+  Network, Brain, GitBranch, Sliders
 } from 'lucide-react';
 import LessonBuilder from '../../components/admin/LessonBuilder';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
-import coursesData from '../../data/courses.json';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('lesson-builder');
+  const [courses, setCourses] = useState([]);
   const { isAdmin, inquiries } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/v1/courses')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (Array.isArray(data)) setCourses(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const newInquiriesCount = (inquiries || []).filter(i => i.status === 'NEW').length;
 
@@ -97,6 +107,30 @@ const AdminDashboard = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab('knowledge-graph')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+              activeTab === 'knowledge-graph'
+                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
+                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent'
+            }`}
+          >
+            <Network className="w-4 h-4" />
+            Knowledge Graph
+          </button>
+
+          <button
+            onClick={() => setActiveTab('mastery-overrides')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+              activeTab === 'mastery-overrides'
+                ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30'
+                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent'
+            }`}
+          >
+            <Brain className="w-4 h-4" />
+            Mastery Overrides
+          </button>
+
+          <button
             onClick={() => setActiveTab('security-settings')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
               activeTab === 'security-settings'
@@ -113,6 +147,8 @@ const AdminDashboard = () => {
       {/* Main Content Area */}
       <main className="flex-1 overflow-auto bg-[#05070a]">
         {activeTab === 'lesson-builder' && <LessonBuilder />}
+        {activeTab === 'knowledge-graph' && <KnowledgeGraphStudio />}
+        {activeTab === 'mastery-overrides' && <MasteryOverridesStudio />}
         {activeTab === 'site-settings' && <SiteSettings />}
         {activeTab === 'inquiries-manager' && <InquiriesManager />}
         {activeTab === 'bkash-payments' && <BkashPaymentSettings />}
@@ -539,7 +575,7 @@ const BkashPaymentSettings = () => {
                 onChange={e => setManualModuleId(e.target.value)}
                 className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-3 text-slate-200 text-sm font-mono focus:border-cyan-500 focus:outline-none"
               >
-                {coursesData.flatMap(c => c.modules.map((m, idx) => (
+                {courses.flatMap(c => (c.modules || []).map((m, idx) => (
                   <option key={m.id} value={m.id} className="bg-[#090d16]">
                     {c.title} — Phase 0{idx + 1}: {m.title}
                   </option>
@@ -742,6 +778,450 @@ const SecuritySettings = () => {
           </div>
           <button type="submit" className="px-6 py-2.5 bg-purple-500 hover:bg-purple-400 text-white font-bold rounded-lg text-sm transition">
             Update Credentials
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const KnowledgeGraphStudio = () => {
+  const [domains, setDomains] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDomain, setSelectedDomain] = useState(null);
+  const [graphData, setGraphData] = useState({ concepts: [], relations: [] });
+  
+  // Create Domain Form State
+  const [domainName, setDomainName] = useState('');
+  const [domainSlug, setDomainSlug] = useState('');
+  const [domainDesc, setDomainDesc] = useState('');
+  const [domainDiff, setDomainDiff] = useState(0.7);
+
+  // Create Concept Form State
+  const [conceptName, setConceptName] = useState('');
+  const [conceptSlug, setConceptSlug] = useState('');
+  const [conceptType, setConceptType] = useState('CONCEPT');
+  const [conceptDiff, setConceptDiff] = useState(0.6);
+  const [conceptImportance, setConceptImportance] = useState(1.0);
+
+  // Add Relation Form State
+  const [fromConceptId, setFromConceptId] = useState('');
+  const [toConceptId, setToConceptId] = useState('');
+  const [relationType, setRelationType] = useState('REQUIRED_PREREQUISITE');
+
+  const [feedback, setFeedback] = useState('');
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
+
+  const fetchDomains = async () => {
+    try {
+      const res = await fetch('/api/v1/domains');
+      if (res.ok) {
+        const data = await res.json();
+        setDomains(data);
+        if (data.length > 0 && !selectedDomain) {
+          setSelectedDomain(data[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Fetch domains error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDomainGraph = async (domainId) => {
+    if (!domainId) return;
+    try {
+      const res = await fetch(`/api/v1/domains/${domainId}/graph`);
+      if (res.ok) {
+        const data = await res.json();
+        setGraphData({ concepts: data.concepts || [], relations: data.relations || [] });
+      }
+    } catch (err) {
+      console.error('Fetch domain graph error:', err);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchDomains();
+  }, []);
+
+  React.useEffect(() => {
+    if (selectedDomain?.id) {
+      fetchDomainGraph(selectedDomain.id);
+    }
+  }, [selectedDomain?.id]);
+
+  const handleCreateDomain = async (e) => {
+    e.preventDefault();
+    if (!domainName || !domainSlug) return;
+    try {
+      const res = await fetch('/api/v1/admin/domains', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: domainName,
+          slug: domainSlug,
+          description: domainDesc,
+          difficulty: Number(domainDiff)
+        })
+      });
+      if (res.ok) {
+        setFeedback(`Domain "${domainName}" created successfully.`);
+        setDomainName('');
+        setDomainSlug('');
+        setDomainDesc('');
+        fetchDomains();
+        setTimeout(() => setFeedback(''), 4000);
+      }
+    } catch (err) {
+      alert('Failed to create domain');
+    }
+  };
+
+  const handleCreateConcept = async (e) => {
+    e.preventDefault();
+    if (!selectedDomain?.id || !conceptName || !conceptSlug) return;
+    try {
+      const res = await fetch('/api/v1/admin/concepts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          domain_id: selectedDomain.id,
+          name: conceptName,
+          slug: conceptSlug,
+          type: conceptType,
+          difficulty: Number(conceptDiff),
+          importance: Number(conceptImportance)
+        })
+      });
+      if (res.ok) {
+        setFeedback(`Concept "${conceptName}" added to ${selectedDomain.name}.`);
+        setConceptName('');
+        setConceptSlug('');
+        fetchDomainGraph(selectedDomain.id);
+        setTimeout(() => setFeedback(''), 4000);
+      }
+    } catch (err) {
+      alert('Failed to add concept');
+    }
+  };
+
+  const handleCreateRelation = async (e) => {
+    e.preventDefault();
+    if (!selectedDomain?.id || !fromConceptId || !toConceptId) return;
+    try {
+      const res = await fetch('/api/v1/admin/relations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          domain_id: selectedDomain.id,
+          from_concept_id: fromConceptId,
+          to_concept_id: toConceptId,
+          relation_type: relationType
+        })
+      });
+      if (res.ok) {
+        setFeedback(`Prerequisite edge linked successfully.`);
+        fetchDomainGraph(selectedDomain.id);
+        setTimeout(() => setFeedback(''), 4000);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        alert(d.detail || 'Failed to add relation');
+      }
+    } catch (err) {
+      alert('Failed to add relation');
+    }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto p-8 space-y-8 font-sans">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-xs font-mono text-cyan-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+            <Network className="w-4 h-4" />
+            <span>Ontology & Cognitive Graph Curator</span>
+          </div>
+          <h2 className="text-2xl font-bold text-white">Knowledge Graph Visual Studio</h2>
+        </div>
+      </div>
+
+      {feedback && (
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{feedback}</span>
+        </div>
+      )}
+
+      {/* Domain Selection & Creation */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1 bg-[#090d16] border border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wide flex items-center gap-2">
+            <span>Active Domains</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{domains.length}</span>
+          </h3>
+          <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+            {domains.map(d => (
+              <button
+                key={d.id}
+                onClick={() => setSelectedDomain(d)}
+                className={`w-full text-left p-2.5 rounded-xl text-xs font-mono transition ${
+                  selectedDomain?.id === d.id
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+                }`}
+              >
+                <div className="font-bold truncate">{d.name}</div>
+                <div className="text-[10px] text-slate-500 truncate">{d.slug}</div>
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleCreateDomain} className="pt-4 border-t border-slate-800 space-y-2.5">
+            <div className="text-xs font-bold text-slate-300">Create New Domain</div>
+            <input
+              type="text"
+              placeholder="Domain Name"
+              value={domainName}
+              onChange={e => setDomainName(e.target.value)}
+              className="w-full bg-[#05070a] border border-slate-800 rounded-lg p-2 text-xs text-slate-200"
+            />
+            <input
+              type="text"
+              placeholder="Slug (e.g. quantum-crypto)"
+              value={domainSlug}
+              onChange={e => setDomainSlug(e.target.value)}
+              className="w-full bg-[#05070a] border border-slate-800 rounded-lg p-2 text-xs text-slate-200"
+            />
+            <button
+              type="submit"
+              className="w-full py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition"
+            >
+              + Add Domain
+            </button>
+          </form>
+        </div>
+
+        {/* Concept & Relation Manager */}
+        <div className="md:col-span-2 space-y-6">
+          {/* Domain Concept List */}
+          <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white">
+                Concepts in {selectedDomain?.name || 'Selected Domain'}
+              </h3>
+              <span className="text-xs font-mono text-slate-400">{graphData.concepts.length} Nodes</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
+              {graphData.concepts.map(c => (
+                <div key={c.id} className="p-3 rounded-xl bg-[#05070a] border border-slate-800 text-xs">
+                  <div className="font-bold text-slate-200 truncate">{c.name}</div>
+                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mt-1">
+                    <span>{c.type}</span>
+                    <span>Diff: {c.difficulty}</span>
+                  </div>
+                </div>
+              ))}
+              {graphData.concepts.length === 0 && (
+                <div className="col-span-2 text-center py-6 text-xs text-slate-500">No concepts registered in this domain.</div>
+              )}
+            </div>
+
+            {/* Quick Add Concept Form */}
+            <form onSubmit={handleCreateConcept} className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 border-t border-slate-800">
+              <input
+                type="text"
+                placeholder="Concept Name"
+                value={conceptName}
+                onChange={e => setConceptName(e.target.value)}
+                className="bg-[#05070a] border border-slate-800 rounded-lg p-2 text-xs text-slate-200"
+              />
+              <input
+                type="text"
+                placeholder="Concept Slug"
+                value={conceptSlug}
+                onChange={e => setConceptSlug(e.target.value)}
+                className="bg-[#05070a] border border-slate-800 rounded-lg p-2 text-xs text-slate-200"
+              />
+              <button
+                type="submit"
+                className="py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition"
+              >
+                + Add Concept Node
+              </button>
+            </form>
+          </div>
+
+          {/* Quick Add Relation Form */}
+          <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <GitBranch className="w-4 h-4 text-amber-400" />
+              <span>Link Prerequisite Edge</span>
+            </h3>
+
+            <form onSubmit={handleCreateRelation} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <select
+                value={fromConceptId}
+                onChange={e => setFromConceptId(e.target.value)}
+                className="bg-[#05070a] border border-slate-800 rounded-lg p-2 text-xs text-slate-200"
+              >
+                <option value="">Select Prerequisite (From)</option>
+                {graphData.concepts.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+
+              <select
+                value={toConceptId}
+                onChange={e => setToConceptId(e.target.value)}
+                className="bg-[#05070a] border border-slate-800 rounded-lg p-2 text-xs text-slate-200"
+              >
+                <option value="">Select Target (To)</option>
+                {graphData.concepts.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+
+              <button
+                type="submit"
+                className="py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition"
+              >
+                Link Prerequisite Edge
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MasteryOverridesStudio = () => {
+  const [userId, setUserId] = useState('');
+  const [conceptId, setConceptId] = useState('');
+  const [mastery, setMastery] = useState(0.85);
+  const [reason, setReason] = useState('Placement exam diagnostic equivalency override');
+  const [notice, setNotice] = useState('');
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
+
+  const handleOverride = async (e) => {
+    e.preventDefault();
+    if (!userId || !conceptId) {
+      alert('User ID and Concept ID are required');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/v1/admin/overrides/mastery', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          user_id: userId.trim(),
+          concept_id: conceptId.trim(),
+          mastery: Number(mastery),
+          reason: reason.trim()
+        })
+      });
+
+      if (res.ok) {
+        setNotice(`Mastery override successfully applied to user ${userId}!`);
+        setTimeout(() => setNotice(''), 4000);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.detail || 'Failed to submit override');
+      }
+    } catch (err) {
+      alert('Error submitting override');
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto p-8 space-y-8 font-sans">
+      <div>
+        <div className="text-xs font-mono text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+          <Brain className="w-4 h-4" />
+          <span>Pedagogical State Modification</span>
+        </div>
+        <h2 className="text-2xl font-bold text-white">Learner Diagnostic Mastery Overrides</h2>
+        <p className="text-xs text-slate-400 mt-1">Force update learner vector mastery across specific cognitive nodes for transfer credit or test-outs.</p>
+      </div>
+
+      {notice && (
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{notice}</span>
+        </div>
+      )}
+
+      <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-6">
+        <form onSubmit={handleOverride} className="space-y-4">
+          <div>
+            <label className="block text-xs font-mono text-slate-300 mb-1">Learner User ID / UUID</label>
+            <input
+              type="text"
+              placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
+              value={userId}
+              onChange={e => setUserId(e.target.value)}
+              className="w-full bg-[#05070a] border border-slate-800 rounded-lg p-3 text-slate-200 text-xs font-mono focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-slate-300 mb-1">Target Concept ID</label>
+            <input
+              type="text"
+              placeholder="e.g. abg-analysis or concept uuid"
+              value={conceptId}
+              onChange={e => setConceptId(e.target.value)}
+              className="w-full bg-[#05070a] border border-slate-800 rounded-lg p-3 text-slate-200 text-xs font-mono focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-slate-300 mb-1">
+              Mastery Score ({Math.round(mastery * 100)}%)
+            </label>
+            <input
+              type="range"
+              min="0.0"
+              max="1.0"
+              step="0.05"
+              value={mastery}
+              onChange={e => setMastery(parseFloat(e.target.value))}
+              className="w-full accent-indigo-500 cursor-pointer"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-slate-300 mb-1">Administrative Audit Reason</label>
+            <textarea
+              rows={3}
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              className="w-full bg-[#05070a] border border-slate-800 rounded-lg p-3 text-slate-200 text-xs focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs transition shadow-lg shadow-indigo-600/20"
+          >
+            Apply Authoritative Mastery Override
           </button>
         </form>
       </div>

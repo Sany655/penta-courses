@@ -1,4 +1,4 @@
-﻿import json
+import json
 import uuid
 from backend.app.core.database import SessionLocal, Base, engine
 import backend.app.models as m
@@ -31,12 +31,14 @@ def seed_all():
             email='admin@pentacourse.com',
             hashed_password=get_password_hash('AdminMaster2026!'),
             full_name='Master Administrator',
-            role=m.UserRole.SUPER_ADMIN,
+            role=m.UserRole.ADMIN,
             is_active=True
         )
         db.add(admin_user)
         db.flush()
         db.add(m.LearnerProfile(user_id=admin_user.id, learning_mode='HYBRID', challenge_preference=0.9))
+    else:
+        admin_user.role = m.UserRole.ADMIN
 
     demo_user = db.query(m.User).filter(m.User.email == 'demo@pentacourse.com').first()
     if not demo_user:
@@ -44,12 +46,14 @@ def seed_all():
             email='demo@pentacourse.com',
             hashed_password=get_password_hash('DemoStudent2026!'),
             full_name='Alex Rivera (Hybrid Learner)',
-            role=m.UserRole.STUDENT,
+            role=m.UserRole.USER,
             is_active=True
         )
         db.add(demo_user)
         db.flush()
         db.add(m.LearnerProfile(user_id=demo_user.id, learning_mode='ADAPTIVE_ONLY', challenge_preference=0.75))
+    else:
+        demo_user.role = m.UserRole.USER
 
     # 2. Clinical Medicine
     med = get_or_create_domain(db, 'Clinical Medicine & Differential Pathophysiology', 'clinical-medicine', 'Physiological causal networks, ABG interpretation, and acute resuscitation algorithms.', 0.85)
@@ -76,9 +80,98 @@ def seed_all():
     c_async = get_or_create_concept(db, py.id, 'AsyncIO Cooperative Multitasking', 'asyncio-eventloop', m.ConceptType.THEORY, 0.75, 0.95)
     c_lock = get_or_create_concept(db, py.id, 'Distributed Redlock Consensus', 'distributed-redlock', m.ConceptType.TECHNIQUE, 0.9, 0.9)
 
+    # 6. Structured Curriculum Tracks & Lessons
+    seed_courses(db)
+
     db.commit()
     db.close()
-    print('Idempotently seeded all 4 multi-domain knowledge graphs and activities!')
+    print('Idempotently seeded all 4 multi-domain knowledge graphs, activities, and curriculum tracks!')
+
+def seed_courses(db):
+    from backend.app.seeds.courses_data import COURSES_SEED_DATA
+    for c_data in COURSES_SEED_DATA:
+        course_id = c_data['id']
+        domain_slug = c_data.get('domain_slug')
+        domain = db.query(m.Domain).filter(m.Domain.slug == domain_slug).first() if domain_slug else None
+
+        course = db.query(m.Course).filter((m.Course.id == course_id) | (m.Course.slug == c_data['slug'])).first()
+        price_in_cents = int(round(c_data.get('price', 49.99) * 100)) if 'price' in c_data else c_data.get('price_in_cents', 4999)
+        stats = c_data.get('stats', {})
+        if 'skills' in c_data:
+            stats['skills'] = c_data['skills']
+
+        if not course:
+            course = m.Course(
+                id=course_id,
+                domain_id=domain.id if domain else None,
+                title=c_data['title'],
+                slug=c_data['slug'],
+                description=c_data.get('description', ''),
+                category=c_data.get('category', 'GENERAL'),
+                difficulty=c_data.get('difficulty', 'Intermediate'),
+                price_in_cents=price_in_cents,
+                is_published=True,
+                instructor_name=c_data.get('instructor_name', 'Faculty Lead'),
+                thumbnail_url=c_data.get('thumbnail_url'),
+                stats_json=stats
+            )
+            db.add(course)
+            db.flush()
+        else:
+            course.title = c_data['title']
+            course.description = c_data.get('description', '')
+            course.price_in_cents = price_in_cents
+            course.stats_json = stats
+            if domain and not course.domain_id:
+                course.domain_id = domain.id
+
+        # Seed Modules
+        for mod_idx, mod_data in enumerate(c_data.get('modules', [])):
+            mod_id = mod_data['id']
+            module = db.query(m.Module).filter(m.Module.id == mod_id).first()
+            bypass_fee_cents = int(round(mod_data.get('bypassFee', 2.99) * 100)) if 'bypassFee' in mod_data else mod_data.get('bypass_fee_in_cents', 299)
+            quiz_json = mod_data.get('quiz', {})
+
+            if not module:
+                module = m.Module(
+                    id=mod_id,
+                    course_id=course.id,
+                    title=mod_data['title'],
+                    order_index=mod_idx,
+                    bypass_fee_in_cents=bypass_fee_cents,
+                    quiz_json=quiz_json
+                )
+                db.add(module)
+                db.flush()
+            else:
+                module.title = mod_data['title']
+                module.order_index = mod_idx
+                module.bypass_fee_in_cents = bypass_fee_cents
+                module.quiz_json = quiz_json
+
+            # Seed Lessons
+            for les_idx, les_data in enumerate(mod_data.get('lessons', [])):
+                les_id = les_data['id']
+                lesson = db.query(m.Lesson).filter(m.Lesson.id == les_id).first()
+                title = les_data.get('title') or les_data.get('metadata', {}).get('lessonTitle') or f'Lesson {mod_idx+1}.{les_idx+1}'
+                blocks = les_data.get('blocks', [])
+                if not blocks and 'block' in les_data:
+                    blocks = [les_data['block']]
+
+                if not lesson:
+                    lesson = m.Lesson(
+                        id=les_id,
+                        module_id=module.id,
+                        title=title,
+                        order_index=les_idx,
+                        duration_minutes=20,
+                        content_blocks=blocks
+                    )
+                    db.add(lesson)
+                else:
+                    lesson.title = title
+                    lesson.order_index = les_idx
+                    lesson.content_blocks = blocks
 
 if __name__ == '__main__':
     seed_all()

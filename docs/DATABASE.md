@@ -38,7 +38,8 @@ erDiagram
 
 - `users`: email, server-side password hash, role, active state, timestamps.
 - `device_sessions`: future multi-device/session synchronization records.
-- Roles include `STUDENT`, `INSTRUCTOR`, `CONTENT_ADMIN`, `AI_ADMIN`, `COMMERCE_ADMIN`, and `SUPER_ADMIN`.
+- Roles are intentionally limited to `STUDENT` and `SUPER_ADMIN`.
+- Public registration always creates `STUDENT`; only a trusted operator or seed process can create `SUPER_ADMIN`.
 
 ### Knowledge and course content
 

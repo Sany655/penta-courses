@@ -1,4 +1,4 @@
-﻿from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -11,13 +11,8 @@ from backend.app.services.llm_generator import LLMCognitiveGeneratorService
 router = APIRouter(prefix='/admin', tags=['Admin Control Panel & Workbench'])
 
 def require_admin(current_user: m.User = Depends(get_current_user)):
-    if current_user.role not in [
-        m.UserRole.SUPER_ADMIN,
-        m.UserRole.CONTENT_ADMIN,
-        m.UserRole.AI_ADMIN,
-        m.UserRole.COMMERCE_ADMIN,
-        m.UserRole.INSTRUCTOR,
-    ]:
+    role = (current_user.role or '').upper()
+    if role not in {m.UserRole.ADMIN, 'ADMIN', 'SUPER_ADMIN'}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required"

@@ -8,7 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import ServerStatusButton from './ServerStatusButton';
 import { 
   Sparkles, ChevronDown, Sun, Moon, LogOut, BookOpen, ExternalLink,
-  Menu, X
+  Menu, X, Brain, FolderGit2, Compass
 } from 'lucide-react';
 
 export default function NavigationBar() {
@@ -118,8 +118,8 @@ export default function NavigationBar() {
               />
               <div className="hidden sm:flex flex-col text-left">
                 <span className="text-xs font-bold text-white line-clamp-1 leading-tight">{user.name}</span>
-                <span className={`text-[10px] font-mono leading-none ${user.role === ROLES.ADMIN ? 'text-purple-400 font-bold' : 'text-emerald-400 font-semibold'}`}>
-                  {user.role === ROLES.ADMIN ? 'Administrator' : 'Student'}
+                <span className={`text-[10px] font-mono leading-none ${isAdmin ? 'text-purple-400 font-bold' : 'text-emerald-400 font-semibold'}`}>
+                  {isAdmin ? 'Admin' : 'User'}
                 </span>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -133,11 +133,11 @@ export default function NavigationBar() {
                   <div className="text-slate-400 text-xs font-mono truncate">{user.email}</div>
                   <div className="mt-1.5">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
-                      user.role === ROLES.ADMIN 
+                      isAdmin 
                         ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' 
                         : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                     }`}>
-                      {user.role === ROLES.ADMIN ? 'Root Administrator' : 'Enrolled Student'}
+                      {isAdmin ? 'Administrator' : 'Standard User'}
                     </span>
                   </div>
                 </div>
@@ -152,6 +152,33 @@ export default function NavigationBar() {
                     <span>AI Admin Studio</span>
                   </Link>
                 )}
+
+                <Link
+                  href="/learner/profile"
+                  onClick={() => setShowProfileMenu(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 hover:text-white transition font-medium"
+                >
+                  <Brain className="w-4 h-4 text-indigo-400" />
+                  <span>Cognitive Profile</span>
+                </Link>
+
+                <Link
+                  href="/missions"
+                  onClick={() => setShowProfileMenu(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 hover:text-white transition font-medium"
+                >
+                  <Compass className="w-4 h-4 text-cyan-400" />
+                  <span>Adaptive Missions</span>
+                </Link>
+
+                <Link
+                  href="/projects"
+                  onClick={() => setShowProfileMenu(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 hover:text-white transition font-medium"
+                >
+                  <FolderGit2 className="w-4 h-4 text-blue-400" />
+                  <span>Capstone Projects</span>
+                </Link>
 
                 <Link
                   href="/courses"

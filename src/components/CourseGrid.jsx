@@ -1,21 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   ShieldAlert, Cpu, Network, Globe, Clock, 
   BarChart3, Lock, Unlock, ArrowRight, Zap, CheckCircle 
 } from 'lucide-react';
-import coursesData from '../data/courses.json';
 import { useAuth } from '../context/AuthContext';
 
 const categoryIcons = {
   CYBERSECURITY: <ShieldAlert className="w-5 h-5 text-emerald-400" />,
   PREDICTIVE_MODELING_ML: <Cpu className="w-5 h-5 text-purple-400" />,
+  CLINICAL_MEDICINE: <ShieldAlert className="w-5 h-5 text-rose-400" />,
   NETWORKING: <Network className="w-5 h-5 text-cyan-400" />,
   WEB_DEVELOPMENT: <Globe className="w-5 h-5 text-amber-400" />,
 };
 
 const CourseGrid = () => {
   const { user } = useAuth();
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/v1/courses')
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        setCourses(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setCourses([]);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <section className="py-20 bg-[#05070a] border-b border-slate-900 transition-colors" id="courses">
@@ -43,89 +58,112 @@ const CourseGrid = () => {
         </div>
 
         {/* Course Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {coursesData.map((course) => {
-            const firstModule = course.modules[0];
-            const firstLesson = firstModule?.lessons[0];
-            const isUnlocked = user ? (user.unlockedModules.includes(firstModule?.id) || user.role === 'ADMIN') : false;
-
-            return (
-              <div
-                key={course.id}
-                className="group relative bg-[#090d16] hover:bg-[#0c121e] border border-slate-800/80 hover:border-slate-700 rounded-2xl p-7 transition-all duration-200 flex flex-col justify-between shadow-xl hover:shadow-2xl"
-              >
-                <div>
-                  {/* Top Badges */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
-                        {categoryIcons[course.category] || <Cpu className="w-5 h-5 text-cyan-400" />}
-                      </div>
-                      <span className="text-xs font-mono text-slate-300 font-bold">
-                        {course.category.replace('_', ' ')}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-bold uppercase tracking-wider ${
-                        course.difficulty === 'Expert' 
-                          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' 
-                          : course.difficulty === 'Advanced'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                          : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                      }`}>
-                        {course.difficulty}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Course Title & Description */}
-                  <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition mb-3">
-                    {course.title}
-                  </h3>
-
-                  <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                    {course.description}
-                  </p>
-
-                  {/* Skills Badges */}
-                  <div className="flex flex-wrap gap-1.5 mb-6">
-                    {course.skills?.map((skill, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300 text-[11px] font-mono border border-slate-800 font-medium"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="bg-[#090d16] border border-slate-800/80 rounded-2xl p-7 animate-pulse h-64 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="h-6 bg-slate-800 rounded w-1/3"></div>
+                  <div className="h-8 bg-slate-800 rounded w-3/4"></div>
+                  <div className="h-12 bg-slate-800/60 rounded w-full"></div>
                 </div>
-
-                {/* Footer Metrics & Actions */}
-                <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                  <div className="flex items-center space-x-4 text-xs font-mono text-slate-400">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Clock className="w-3.5 h-3.5 text-slate-500" />
-                      {course.stats?.estimatedHours || 24}h Total
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <BarChart3 className="w-3.5 h-3.5 text-slate-500" />
-                      {course.stats?.modules || 4} Phases
-                    </span>
-                  </div>
-
-                  <Link
-                    href={firstLesson ? `/learn/${course.id}/${firstModule.id}/${firstLesson.id}` : `/course/${course.id}/overview`}
-                    className="penta-card-btn inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold font-mono shadow-sm"
-                  >
-                    <span>{isUnlocked ? 'Enter Lab' : 'Preview Phase'}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
+                <div className="h-10 bg-slate-800 rounded w-1/4"></div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="p-12 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/30 text-slate-400 font-mono text-sm">
+            No active curriculum tracks available at this moment.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {courses.map((course) => {
+              const firstModule = course.modules?.[0];
+              const firstLesson = firstModule?.lessons?.[0];
+              const isUnlocked = user ? (user.unlockedModules?.includes(firstModule?.id) || user.role === 'ADMIN') : false;
+              const stats = course.stats_json || course.stats || {};
+              const skills = stats.skills || course.skills || [];
+
+              return (
+                <div
+                  key={course.id}
+                  className="group relative bg-[#090d16] hover:bg-[#0c121e] border border-slate-800/80 hover:border-slate-700 rounded-2xl p-7 transition-all duration-200 flex flex-col justify-between shadow-xl hover:shadow-2xl"
+                >
+                  <div>
+                    {/* Top Badges */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                          {categoryIcons[course.category] || <Cpu className="w-5 h-5 text-cyan-400" />}
+                        </div>
+                        <span className="text-xs font-mono text-slate-300 font-bold">
+                          {(course.category || 'TRACK').replace('_', ' ')}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-bold uppercase tracking-wider ${
+                          course.difficulty === 'Expert' 
+                            ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' 
+                            : course.difficulty === 'Advanced'
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                            : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                        }`}>
+                          {course.difficulty}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Course Title & Description */}
+                    <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition mb-3">
+                      {course.title}
+                    </h3>
+
+                    <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                      {course.description}
+                    </p>
+
+                    {/* Skills Badges */}
+                    {skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-6">
+                        {skills.map((skill, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300 text-[11px] font-mono border border-slate-800 font-medium"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer Metrics & Actions */}
+                  <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                    <div className="flex items-center space-x-4 text-xs font-mono text-slate-400">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                        {stats.estimatedHours || 24}h Total
+                      </span>
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <BarChart3 className="w-3.5 h-3.5 text-slate-500" />
+                        {course.modules?.length || stats.modules || 2} Phases
+                      </span>
+                    </div>
+
+                    <Link
+                      href={firstLesson ? `/learn/${course.id}/${firstModule.id}/${firstLesson.id}` : `/course/${course.id}/overview`}
+                      className="penta-card-btn inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold font-mono shadow-sm"
+                    >
+                      <span>{isUnlocked ? 'Enter Lab' : 'Preview Phase'}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
       </div>
     </section>

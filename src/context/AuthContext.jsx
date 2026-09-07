@@ -3,17 +3,36 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext();
 
 export const ROLES = {
-  STUDENT: 'STUDENT',
   ADMIN: 'ADMIN',
+  USER: 'USER',
+  GUEST: 'GUEST',
+  // Backward-compatibility aliases
+  SUPER_ADMIN: 'ADMIN',
+  STUDENT: 'USER',
 };
 
-const normalizeUser = (account) => ({
-  ...account,
-  name: account.name || account.full_name || account.email,
-  role: account.role === 'SUPER_ADMIN' || account.role === 'AI_ADMIN' || account.role === 'CONTENT_ADMIN'
-    ? ROLES.ADMIN
-    : account.role,
-});
+const normalizeUser = (account) => {
+  if (!account) return null;
+  const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_user') : null;
+  let parsed = {};
+  try {
+    parsed = saved ? JSON.parse(saved) : {};
+  } catch {
+    parsed = {};
+  }
+
+  const rawRole = (account.role || parsed.role || ROLES.USER).toUpperCase();
+  const canonicalRole = rawRole === 'SUPER_ADMIN' ? ROLES.ADMIN : (rawRole === 'STUDENT' ? ROLES.USER : rawRole);
+
+  return {
+    ...account,
+    name: account.name || account.full_name || account.email,
+    role: canonicalRole,
+    unlockedModules: account.unlockedModules || parsed.unlockedModules || ['module-1'],
+    bypassedModules: account.bypassedModules || parsed.bypassedModules || [],
+    completedQuizzes: account.completedQuizzes || parsed.completedQuizzes || [],
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -79,7 +98,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('penta_access_token');
-    if (!token || !['ADMIN', 'INSTRUCTOR'].includes(user?.role)) return;
+    const userRole = (user?.role || '').toUpperCase();
+    if (!token || !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) return;
     const headers = { Authorization: `Bearer ${token}` };
     Promise.all([
       fetch('/api/v1/admin/inquiries', { headers }).then(response => response.ok ? response.json() : []),
@@ -265,28 +285,60 @@ export const AuthProvider = ({ children }) => {
     if (!user) return;
     setUser(prev => ({
       ...prev,
-      unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), moduleId])),
-      pendingModules: (prev.pendingModules || []).filter(id => id !== moduleId)
+      unlockedModules: Array.from(new Set([...(prev?.unlockedModules || []), moduleId])),
+      pendingModules: (prev?.pendingModules || []).filter(id => id !== moduleId)
     }));
   };
 
-  const bypassModuleWithPayment = (moduleId) => {
+  const bypassModuleWithPayment = async (moduleId, transactionId = null) => {
     if (!user) return;
     setUser(prev => ({
       ...prev,
-      unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), moduleId])),
-      bypassedModules: Array.from(new Set([...(prev.bypassedModules || []), moduleId])),
-      pendingModules: (prev.pendingModules || []).filter(id => id !== moduleId)
+      unlockedModules: Array.from(new Set([...(prev?.unlockedModules || []), moduleId])),
+      bypassedModules: Array.from(new Set([...(prev?.bypassedModules || []), moduleId])),
+      pendingModules: (prev?.pendingModules || []).filter(id => id !== moduleId)
     }));
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
+    if (token && moduleId) {
+      try {
+        await fetch(`/api/v1/tracks/modules/${moduleId}/bypass-pay`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ transaction_id: transactionId })
+        });
+      } catch (err) {
+        console.warn('Payment bypass sync note:', err.message);
+      }
+    }
   };
 
-  const recordQuizSuccess = (quizId, moduleId) => {
+  const recordQuizSuccess = async (quizId, moduleId) => {
     if (!user) return;
     setUser(prev => ({
       ...prev,
-      completedQuizzes: Array.from(new Set([...(prev.completedQuizzes || []), quizId])),
-      unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), moduleId]))
+      completedQuizzes: Array.from(new Set([...(prev?.completedQuizzes || []), quizId])),
+      unlockedModules: Array.from(new Set([...(prev?.unlockedModules || []), moduleId]))
     }));
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
+    if (token && moduleId) {
+      try {
+        await fetch(`/api/v1/tracks/modules/${moduleId}/bypass-exam`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ responses: [{ quiz_id: quizId, status: 'PASSED' }] })
+        });
+      } catch (err) {
+        console.warn('Quiz exam sync note:', err.message);
+      }
+    }
   };
 
   return (
@@ -313,9 +365,12 @@ export const AuthProvider = ({ children }) => {
       unlockNextModule,
       bypassModuleWithPayment,
       recordQuizSuccess,
-      isAdmin: user?.role === ROLES.ADMIN,
-      isStudent: user?.role === ROLES.STUDENT,
-      isStaff: user?.role === ROLES.ADMIN || user?.role === 'INSTRUCTOR',
+      isAdmin: ['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()),
+      isUser: Boolean(user),
+      isGuest: !user,
+      isStudent: Boolean(user) && !['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()),
+      isStaff: ['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()),
+      role: user ? (['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()) ? ROLES.ADMIN : ROLES.USER) : ROLES.GUEST,
     }}>
       {children}
     </AuthContext.Provider>

@@ -112,7 +112,7 @@ Inquiry administration is under `/admin/inquiries`.
 
 ## Admin and RBAC
 
-Admin routes require one of `SUPER_ADMIN`, `CONTENT_ADMIN`, `AI_ADMIN`, `COMMERCE_ADMIN`, or `INSTRUCTOR`, depending on the operation.
+The MVP has exactly two roles: `STUDENT` and `SUPER_ADMIN`. Every route under `/admin` requires `SUPER_ADMIN`. Students can use learner, session, inquiry, and commerce routes, but cannot mutate curriculum, pricing, payments, or entitlements.
 
 | Method | Path | Purpose |
 |---|---|---|

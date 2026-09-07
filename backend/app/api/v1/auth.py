@@ -14,7 +14,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if not payload or 'sub' not in payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid or expired credentials')
     user = db.query(m.User).filter(m.User.id == payload['sub']).first()
-    if not user:
+    if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
     return user
 
@@ -28,7 +28,7 @@ def register(data: s.UserCreate, db: Session = Depends(get_db)):
         email=data.email,
         hashed_password=get_password_hash(data.password),
         full_name=data.full_name,
-        role=m.UserRole.STUDENT,
+        role=m.UserRole.USER,
         is_active=True
     )
     db.add(user)

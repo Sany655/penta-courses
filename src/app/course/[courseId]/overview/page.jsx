@@ -7,29 +7,73 @@ import {
   Clock, Award, CheckCircle, ArrowLeft, Terminal, 
   ShieldCheck, ArrowRight, Lock, BookOpen, Layers, Zap 
 } from 'lucide-react';
-import coursesData from '../../../../data/courses.json';
 import { useAuth } from '../../../../context/AuthContext';
 import { BkashPaymentModal } from '../../../../components/payment/BkashPaymentModal';
 
 const CourseOverview = ({ params }) => {
   const router = useRouter();
   const { courseId } = use(params);
-  const { user, bkashSettings } = useAuth();
+  const { user, isAdmin, bkashSettings } = useAuth();
   const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedModuleForPay, setSelectedModuleForPay] = useState(null);
   const [showFullCoursePay, setShowFullCoursePay] = useState(false);
 
   useEffect(() => {
-    const found = coursesData.find(c => c.id === courseId || c.slug === courseId) || coursesData[0];
-    setCourse(found);
+    fetch(`/api/v1/courses/${courseId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          setCourse(data);
+          setLoading(false);
+        } else {
+          fetch('/api/v1/courses')
+            .then(r => r.ok ? r.json() : [])
+            .then(list => {
+              const match = list.find(c => c.id === courseId || c.slug === courseId) || list[0];
+              setCourse(match || null);
+              setLoading(false);
+            })
+            .catch(() => {
+              setCourse(null);
+              setLoading(false);
+            });
+        }
+      })
+      .catch(() => {
+        setCourse(null);
+        setLoading(false);
+      });
   }, [courseId]);
 
-  if (!course) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#05070a] text-slate-200 pt-24 pb-20 font-sans flex items-center justify-center">
+        <div className="flex items-center gap-3 font-mono text-sm text-slate-400">
+          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <span>Loading curriculum syllabus from database...</span>
+        </div>
+      </div>
+    );
+  }
 
-  const firstModule = course.modules[0];
-  const firstLesson = firstModule?.lessons[0];
-  const allModuleIds = course.modules.map(m => m.id);
-  const isFullCourseUnlocked = allModuleIds.every(id => user.unlockedModules.includes(id)) || user.role !== 'STUDENT';
+  if (!course) {
+    return (
+      <div className="min-h-screen bg-[#05070a] text-slate-200 pt-24 pb-20 font-sans max-w-5xl mx-auto px-6 text-center">
+        <p className="text-slate-400 font-mono">Curriculum track not found.</p>
+        <Link href="/courses" className="mt-4 inline-block text-emerald-400 font-mono text-xs underline">
+          Return to Course Tracks
+        </Link>
+      </div>
+    );
+  }
+
+  const modules = course.modules || [];
+  const stats = course.stats_json || course.stats || {};
+  const firstModule = modules[0] || { id: 'module-1' };
+  const firstLesson = firstModule?.lessons?.[0];
+  const allModuleIds = modules.map(m => m.id);
+  const isFullCourseUnlocked = allModuleIds.length > 0 && (allModuleIds.every(id => (user?.unlockedModules || []).includes(id)) || isAdmin);
 
   return (
     <div className="min-h-screen bg-[#05070a] text-slate-200 pt-24 pb-20 font-sans">
@@ -44,10 +88,10 @@ const CourseOverview = ({ params }) => {
         <div className="bg-[#090d16] border border-slate-800 rounded-3xl p-8 md:p-10 space-y-6 shadow-2xl relative overflow-hidden">
           <div className="flex flex-wrap items-center gap-3">
             <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
-              {course.category.replace('_', ' ')}
+              {(course.category || 'SPECIALIZATION').replace('_', ' ')}
             </span>
             <span className="px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-mono">
-              {course.difficulty}
+              {course.difficulty || 'Intermediate'}
             </span>
           </div>
 
@@ -61,10 +105,10 @@ const CourseOverview = ({ params }) => {
 
           <div className="flex flex-wrap items-center gap-6 text-xs font-mono text-slate-400 pt-2 border-t border-slate-800/80">
             <span className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-cyan-400" /> {course.stats?.estimatedHours || 24} Hours
+              <Clock className="w-4 h-4 text-cyan-400" /> {stats.estimatedHours || 24} Hours
             </span>
             <span className="flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-purple-400" /> {course.modules.length} Progressive Modules
+              <Layers className="w-4 h-4 text-purple-400" /> {modules.length} Progressive Modules
             </span>
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-400" /> Sequential Gatekeeper
@@ -75,7 +119,7 @@ const CourseOverview = ({ params }) => {
             <div>
               <div className="text-xs text-slate-500 font-mono">Full Track Admission</div>
               <div className="text-2xl font-bold text-white font-mono">
-                ৳{course.price * 85 || 1500} BDT <span className="text-xs text-slate-400 font-normal">or Free Phase 01 Preview</span>
+                ৳{Math.round((course.price || (course.price_in_cents ? course.price_in_cents / 100 : 49.99)) * 85)} BDT <span className="text-xs text-slate-400 font-normal">or Free Phase 01 Preview</span>
               </div>
             </div>
 
@@ -112,8 +156,8 @@ const CourseOverview = ({ params }) => {
 
           <div className="space-y-4">
             {course.modules.map((mod, idx) => {
-              const isUnlocked = user.unlockedModules.includes(mod.id) || user.role !== 'STUDENT';
-              const isPending = (user.pendingModules || []).includes(mod.id);
+              const isUnlocked = (user?.unlockedModules || []).includes(mod.id) || isAdmin;
+              const isPending = (user?.pendingModules || []).includes(mod.id);
 
               return (
                 <div

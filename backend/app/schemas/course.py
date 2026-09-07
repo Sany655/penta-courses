@@ -16,6 +16,7 @@ class ModuleOut(BaseModel):
     title: str
     order_index: int
     bypass_fee_in_cents: int
+    quiz_json: Optional[Dict[str, Any]] = None
     lessons: List[LessonOut] = []
     model_config = ConfigDict(from_attributes=True)
 

@@ -47,20 +47,25 @@ Clicking the status button performs an immediate health check. The production AP
 
 ## Route and Screen Model
 
-| Route | Primary user job |
-|---|---|
-| `/` | Understand the platform and enter a learning path |
-| `/domains` | Compare knowledge domains |
-| `/courses` | Browse structured tracks |
-| `/missions` | Start adaptive learning |
-| `/knowledge-graph` | Inspect prerequisite relationships |
-| `/tracks/[courseId]` | Review track/module progression |
-| `/learn/[courseId]/[moduleId]/[lessonId]` | Complete an interactive lesson |
-| `/learner/profile` | Review learner state and evidence |
-| `/auth` | Register or log in through backend JWT auth |
-| `/admin` | Manage content, inquiries, commerce, and settings |
-| `/pricing` | Compare products and access options |
-| `/certifications` | Verify a certificate |
+| Route | Minimum Role | Primary User Job & Functionalities |
+|---|:---:|---|
+| `/` | `guest` | Platform overview, 4 domain track teasers, system health check, platform KPIs |
+| `/courses` | `guest` | Browse structured track catalog, filter by domain, inspect bypass exam fees |
+| `/domains` | `guest` | Compare knowledge domain concepts, difficulty ratings, and ontologies |
+| `/knowledge-graph` | `guest` | Full-screen interactive force-directed graph with prerequisite edge inspection |
+| `/how-it-works` | `guest` | Review learning loop architecture (Diagnostics, Remediation, Capstone) |
+| `/adaptive-learning` | `guest` | Examine cognitive block primitives, Bayesian knowledge tracing, decay curves |
+| `/pricing` | `guest` | Compare track tiers, subscription options, and module bypass fees |
+| `/certifications` | `guest` | Verify graduation diplomas and cryptographically validate certificates |
+| `/contact` | `guest` | Submit enterprise curriculum inquiries and institutional partnerships |
+| `/auth` | `guest` | Register or log in through backend JWT auth with demo fast-fills |
+| `/tracks/[courseId]` | `user` | Track syllabus tree, phase gatekeeper badges, bypass exam / payment triggers |
+| `/course/[courseId]/overview` | `user` | Review course syllabus, module outcomes, and launch lessons |
+| `/learn/[courseId]/[moduleId]/[lessonId]` | `user` | Split-pane learning workspace: Markdown/Code, Socratic hints, gatekeeper quiz |
+| `/missions` | `user` | Autonomous adaptive Next-Best-Action mission loop with live cognitive block runner |
+| `/learner/profile` | `user` | 5D mastery radar chart, Ebbinghaus decay curve, curiosity signals, goal gap planner |
+| `/projects` | `user` | Capstone engineering projects dashboard, task instructions, automated rubric grading |
+| `/admin` | `admin` | AI Lesson Studio with Gemini, KG visual ontology studio, bKash payments ledger, mastery overrides, inquiry triage |
 
 ## Learning Interaction Loop
 
@@ -96,7 +101,12 @@ The platform uses reusable interaction primitives rather than domain-specific on
 Admin screens are role-gated twice:
 
 1. The UI hides or redirects unauthorized views.
-2. FastAPI validates the bearer JWT and role on every mutation.
+2. FastAPI validates the bearer JWT and requires `SUPER_ADMIN` on every admin mutation.
+
+The MVP has two user experiences only:
+
+- Student workspace: learning, progress, inquiries, payments, and certificates.
+- Super-admin workspace: complete platform operations and review workflows.
 
 Admin workflows include:
 

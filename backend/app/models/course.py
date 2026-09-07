@@ -33,6 +33,7 @@ class Module(Base):
     title = Column(String(255), nullable=False)
     order_index = Column(Integer, default=0, nullable=False)
     bypass_fee_in_cents = Column(Integer, default=299, nullable=False)
+    quiz_json = Column(JSON, default=dict, nullable=True)
 
     course = relationship('Course', back_populates='modules')
     lessons = relationship('Lesson', back_populates='module', cascade='all, delete-orphan', order_by='Lesson.order_index')
