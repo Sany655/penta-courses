@@ -16,18 +16,7 @@ export default function HowItWorksPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <nav className="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="font-bold text-lg text-slate-100 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center">P</span>
-            <span>PentaCourse</span>
-          </Link>
-          <Link href="/missions" className="text-xs px-3.5 py-2 rounded-lg bg-emerald-500 text-slate-950 font-semibold">Try Sandbox</Link>
-        </div>
-      </nav>
-
-      <main className="max-w-4xl mx-auto px-4 py-16">
+    <main className="max-w-4xl mx-auto px-4 py-16">
         <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-100 tracking-tight mb-6">
           The 7 Universal Cognitive Block Archetypes
         </h1>
@@ -53,7 +42,6 @@ export default function HowItWorksPage() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
-      </main>
-    </div>
+    </main>
   );
 }

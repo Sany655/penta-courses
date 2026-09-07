@@ -6,17 +6,19 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, ROLES } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { signOut } from 'next-auth/react';
+import ServerStatusButton from './ServerStatusButton';
 import { 
-  Terminal, Shield, Sparkles, User, ChevronDown, 
-  Sun, Moon, LogOut, BookOpen, UserCheck, LayoutDashboard, ExternalLink 
+  Sparkles, ChevronDown, Sun, Moon, LogOut, BookOpen, ExternalLink,
+  Menu, X
 } from 'lucide-react';
 
 export default function NavigationBar() {
   const { user, isAdmin } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef(null);
   
   const isWorkspace = pathname && pathname.startsWith('/learn');
@@ -37,6 +39,7 @@ export default function NavigationBar() {
   }
 
   return (
+    <>
     <nav className="penta-navbar fixed top-0 left-0 right-0 h-16 backdrop-blur-md border-b px-6 flex items-center justify-between z-40 transition-colors shadow-md">
       {/* Brand Logo */}
       <div className="flex items-center space-x-3">
@@ -51,11 +54,12 @@ export default function NavigationBar() {
         </Link>
       </div>
 
-      {/* Navigation Links - Crisp & High Contrast in Both Modes */}
+      {/* Navigation Links - Desktop */}
       <div className="hidden md:flex items-center space-x-8 text-xs font-mono font-bold">
-        <a href="/#courses" className="nav-link">Curriculum Tracks</a>
-        <a href="/#faq" className="nav-link">FAQ</a>
-        <a href="/#contact" className="nav-link">Custom Tracks</a>
+        <Link href="/domains" className="nav-link">Domains</Link>
+        <Link href="/courses" className="nav-link">Courses</Link>
+        <Link href="/how-it-works" className="nav-link">How It Works</Link>
+        <Link href="/pricing" className="nav-link">Pricing</Link>
         <a 
           href="https://pentabrid.com/" 
           target="_blank" 
@@ -77,8 +81,17 @@ export default function NavigationBar() {
         )}
       </div>
 
-      {/* Action Items: Theme Toggle + User Profile */}
+      {/* Action Items: Theme Toggle + User Profile + Mobile Menu */}
       <div className="flex items-center space-x-3">
+        <ServerStatusButton />
+        {/* Mobile Menu Toggle */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 hover:bg-slate-800 transition flex items-center justify-center shadow-sm"
+          title="Toggle menu"
+        >
+          {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+        </button>
         {/* Light / Dark Mode Toggle */}
         <button
           onClick={toggleTheme}
@@ -141,14 +154,14 @@ export default function NavigationBar() {
                   </Link>
                 )}
 
-                <a
-                  href="/#courses"
+                <Link
+                  href="/courses"
                   onClick={() => setShowProfileMenu(false)}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 hover:text-white transition font-medium"
                 >
                   <BookOpen className="w-4 h-4 text-emerald-400" />
-                  <span>Curriculum Tracks</span>
-                </a>
+                  <span>Course Tracks</span>
+                </Link>
 
                 <button
                   onClick={() => {
@@ -182,5 +195,32 @@ export default function NavigationBar() {
         )}
       </div>
     </nav>
+
+    {/* Mobile Navigation Drawer */}
+    {mobileMenuOpen && (
+      <div className="fixed inset-0 z-30 md:hidden" onClick={() => setMobileMenuOpen(false)}>
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div
+          className="absolute top-16 left-0 right-0 bg-[#090d16] border-b border-slate-800 shadow-2xl p-4 space-y-1 animate-fade-in"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Link href="/domains" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-200 hover:bg-slate-800/80 hover:text-emerald-400 transition">Domains</Link>
+          <Link href="/courses" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-200 hover:bg-slate-800/80 hover:text-emerald-400 transition">Courses</Link>
+          <Link href="/how-it-works" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-200 hover:bg-slate-800/80 hover:text-emerald-400 transition">How It Works</Link>
+          <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-200 hover:bg-slate-800/80 hover:text-emerald-400 transition">Pricing</Link>
+          <a href="https://pentabrid.com/" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-200 hover:bg-slate-800/80 hover:text-cyan-400 transition">
+            <span>pentabrid.com</span>
+            <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+          </a>
+          {isAdmin && (
+            <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-mono font-bold text-cyan-400 hover:bg-slate-800/80 transition">
+              <Sparkles className="w-4 h-4" />
+              <span>AI Admin Studio</span>
+            </Link>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }

@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { Sparkles, Brain, Network, ShieldCheck, ArrowRight, Layers, Target, CheckCircle2, Zap } from 'lucide-react';
+import { Sparkles, Brain, Network, ShieldCheck, ArrowRight, Layers, Target, CheckCircle2 } from 'lucide-react';
 import { trackEvent } from '@/lib/analytics';
 
 export default function HomePage() {
@@ -11,42 +11,9 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-slate-950 font-sans">
-      {/* Navigation */}
-      <nav className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-emerald-500/20">
-              P
-            </div>
-            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-100 to-slate-400 bg-clip-text text-transparent">
-              PentaCourse
-            </span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
-            <Link href="/domains" className="hover:text-emerald-400 transition-colors">Domains</Link>
-            <Link href="/courses" className="hover:text-emerald-400 transition-colors">Courses</Link>
-            <Link href="/adaptive-learning" className="hover:text-emerald-400 transition-colors">Adaptive Engine</Link>
-            <Link href="/how-it-works" className="hover:text-emerald-400 transition-colors">How It Works</Link>
-            <Link href="/pricing" className="hover:text-emerald-400 transition-colors">Pricing</Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/missions"
-              onClick={() => trackEvent('cta_click', { cta: 'take_free_diagnostic_nav' })}
-              className="px-4 py-2 text-xs font-bold rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5"
-            >
-              <Target className="w-3.5 h-3.5" />
-              <span>Free Diagnostic</span>
-            </Link>
-          </div>
-        </div>
-      </nav>
-
+    <>
       {/* Hero Section */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-24 text-center">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-24 text-center">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold mb-6">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Outcome-Driven Adaptive Learning</span>
@@ -184,53 +151,6 @@ export default function HomePage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-12 text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-          <div>
-            <h4 className="font-semibold text-slate-300 mb-3">Learning Platform</h4>
-            <ul className="space-y-2">
-              <li><Link href="/domains" className="hover:text-emerald-400">Knowledge Domains</Link></li>
-              <li><Link href="/courses" className="hover:text-emerald-400">Course Tracks</Link></li>
-              <li><Link href="/adaptive-learning" className="hover:text-emerald-400">Adaptive Decision Engine</Link></li>
-              <li><Link href="/how-it-works" className="hover:text-emerald-400">Interactive Archetypes</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-slate-300 mb-3">Certifications & Pricing</h4>
-            <ul className="space-y-2">
-              <li><Link href="/pricing" className="hover:text-emerald-400">Founder & Track Pricing</Link></li>
-              <li><Link href="/certifications" className="hover:text-emerald-400">Verified Certificates</Link></li>
-              <li><Link href="/pricing#bypass" className="hover:text-emerald-400">Module Bypass Exams</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-slate-300 mb-3">Trust & Safety</h4>
-            <ul className="space-y-2">
-              <li><Link href="/terms" className="hover:text-emerald-400">Terms of Service</Link></li>
-              <li><Link href="/privacy" className="hover:text-emerald-400">Privacy Policy</Link></li>
-              <li><Link href="/refund" className="hover:text-emerald-400">Refund Policy</Link></li>
-              <li><Link href="/terms#clinical-disclaimer" className="hover:text-emerald-400">Clinical Disclaimer</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-slate-300 mb-3">Organization</h4>
-            <ul className="space-y-2">
-              <li><Link href="/about" className="hover:text-emerald-400">About Us</Link></li>
-              <li><Link href="/contact" className="hover:text-emerald-400">Contact Support</Link></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 PentaCourse. All rights reserved.</p>
-          <p className="text-[11px] text-slate-600">Educational platform only. Not intended as clinical diagnostic software or legal counsel.</p>
-        </div>
-      </footer>
-    </div>
+    </>
   );
 }

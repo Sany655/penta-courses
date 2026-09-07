@@ -1,21 +1,10 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <nav className="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="font-bold text-lg text-slate-100 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center">P</span>
-            <span>PentaCourse</span>
-          </Link>
-        </div>
-      </nav>
-
-      <main className="max-w-3xl mx-auto px-4 py-16 text-sm text-slate-300 space-y-6 leading-relaxed">
+    <main className="max-w-3xl mx-auto px-4 py-16 text-sm text-slate-300 space-y-6 leading-relaxed">
         <h1 className="text-3xl font-extrabold text-slate-100 mb-6">Privacy Policy</h1>
         <p className="text-xs text-slate-400">Last updated: August 31, 2026</p>
         <p>
@@ -33,7 +22,6 @@ export default function PrivacyPage() {
         <p>
           All credit card and mobile financial transactions are processed securely via Stripe and bKash. We never store raw credit card numbers or PINs on our servers.
         </p>
-      </main>
-    </div>
+    </main>
   );
 }
