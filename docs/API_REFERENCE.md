@@ -1,89 +1,152 @@
-﻿# API Reference — Unified Hybrid Adaptive Learning Platform
+# API Reference
 
-Base URL: `/api/v1`
+## Service Contract
 
----
+- Base path: `/api/v1`
+- Transport: JSON over HTTPS
+- Authentication: `Authorization: Bearer <access_token>`
+- Public routes: catalog, certificate verification, health, and inquiry submission.
+- Protected routes: learner data, sessions, telemetry, commerce, generator, sync, and admin operations.
+- Role protection is enforced by FastAPI dependencies, not by frontend visibility alone.
 
-## 1. Authentication & Learner Profile
-- `POST /auth/register`: Register new student or admin.
-- `POST /auth/token`: Authenticate and obtain JWT bearer token.
-- `GET /learner/profile`: Retrieve active learner 5-D mastery vectors, radar, and retention schedule.
-- `PUT /learner/profile`: Update learning mode preference (`HYBRID`, `STRUCTURED_ONLY`, `ADAPTIVE_ONLY`) and challenge preference $[0.0, 1.0]$.
+```mermaid
+flowchart TB
+    Client[Next.js client] --> Auth[/auth/register<br/>/auth/login<br/>/auth/me/]
+    Client --> Learning[/domains /courses /goals<br/>/adaptive /sessions /tracks/]
+    Client --> Commerce[/commerce/checkout<br/>/commerce/manual-payments/]
+    Client --> Admin[/admin/*]
+    Auth --> DB[(Authoritative database)]
+    Learning --> DB
+    Commerce --> DB
+    Admin --> DB
+```
 
----
+## Authentication
 
-## 2. Knowledge Graph & Domains
-- `GET /domains`: List published knowledge domains (e.g., Medicine, Law, Economics, Python Systems).
-- `GET /domains/{domain_id}/graph`: Retrieve topological DAG nodes, directed edges, prerequisite relations, and learner status overlays.
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/auth/register` | Public | Create a `STUDENT` user and return JWT |
+| POST | `/auth/login` | Public | Verify credentials and return JWT |
+| POST | `/auth/token` | Public | OAuth2 form-compatible token endpoint |
+| GET | `/auth/me` | Bearer | Return the current user |
 
----
+Registration ignores client-provided roles. Passwords are hashed by the backend and the frontend stores the returned access token as `penta_access_token`.
 
-## 3. Goals & Diagnostic Probes
-- `POST /goals`: Create a self-directed learning goal with target concepts.
-- `GET /goals`: List all active and completed learner goals.
-- `GET /goals/{goal_id}/gap-analysis`: Topological graph gap analysis (actionable frontier, blocked concepts, estimated effort).
-- `POST /goals/{goal_id}/probes`: Generate diagnostic probe activities to rapidly baseline mastery across prerequisite trees.
+## Catalog and Knowledge
 
----
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/domains` | Public | List domains |
+| GET | `/domains/{domain_id}` | Public | Read a domain |
+| GET | `/domains/{domain_id}/graph` | Public/Bearer overlay | Read graph nodes and relations |
+| GET | `/courses` | Public | List courses |
+| GET | `/courses/{course_id}` | Public | Read course structure |
+| GET | `/tracks/courses` | Public | List published structured tracks |
+| GET | `/tracks/courses/{course_id}/progress` | Bearer | Read learner track progress |
 
-## 4. Adaptive Learning Engine & Sessions
-- `GET /adaptive/recommendation?domain_id={id}`: Generate explainable next-activity recommendation with 10-factor candidate weights.
-- `POST /sessions`: Start or resume an adaptive learning session.
-- `POST /sessions/{session_id}/attempts`: Submit an activity attempt, trigger deterministic scoring, and update 5-D competence vectors.
-- `POST /sessions/{session_id}/repair`: Trigger closed-loop prerequisite repair when an attempt fails.
+## Goals and Adaptive Learning
 
----
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/goals` | Bearer | List learner goals |
+| POST | `/goals` | Bearer | Create a goal |
+| GET | `/goals/{goal_id}/gap-analysis` | Bearer | Calculate graph gaps |
+| POST | `/goals/{goal_id}/diagnostic-probe` | Bearer | Generate a probe |
+| POST | `/goals/{goal_id}/diagnostic-probe/submit` | Bearer | Submit probe results |
+| GET | `/adaptive/recommendation/{domain_id}` | Bearer | Get the next explainable recommendation |
+| GET | `/learner/profile` | Bearer | Read the learner profile |
+| GET | `/learner/domains/{domain_id}` | Bearer | Read domain mastery |
+| GET | `/learner/concepts/{concept_id}` | Bearer | Read concept mastery |
 
-## 5. Curiosity & Exploration Radar
-- `POST /curiosity/signals`: Capture micro-signals (hover, search queries, tangents) to populate the Exploration Radar.
-- `GET /curiosity/radar`: List active exploratory curiosity items with interest scores.
-- `POST /curiosity/tangents`: Convert curiosity item into an adaptive tangent learning mission.
+## Sessions, Tracks, and Projects
 
----
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/sessions/start` | Bearer | Start a learning session |
+| GET | `/sessions/{session_id}/mission` | Bearer | Read the current mission |
+| POST | `/sessions/{session_id}/attempt` | Bearer | Submit an activity attempt |
+| POST | `/sessions/{session_id}/complete` | Bearer | Complete a session |
+| POST | `/tracks/modules/{module_id}/bypass-exam` | Bearer | Evaluate a bypass exam |
+| POST | `/tracks/modules/{module_id}/bypass-pay` | Bearer | Apply a paid bypass transaction |
+| GET | `/projects` | Bearer | List capstone projects |
+| POST | `/projects` | Bearer | Create a project |
+| GET | `/projects/{project_id}` | Bearer | Read a project |
+| POST | `/projects/tasks/{task_id}/submit` | Bearer | Submit project evidence |
 
-## 6. Structured Tracks & Bypass Exams
-- `GET /tracks/{course_id}/outline`: Retrieve structured course outline with module status, lesson completion, and lock states.
-- `POST /tracks/modules/{module_id}/bypass-exam`: Evaluate module bypass exam responses and unlock downstream modules upon $\ge 80\%$ score.
-- `POST /tracks/modules/{module_id}/paid-bypass`: Unlock module instantly through entitlement/transaction record.
+## Curiosity, Generator, Telemetry, and Sync
 
----
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/curiosity/radar` | Bearer | Read exploration items |
+| POST | `/curiosity/capture` | Bearer | Capture a curiosity signal |
+| POST | `/curiosity/{item_id}/promote` | Bearer | Promote an exploration item |
+| GET | `/curiosity/tangents` | Bearer | List tangent missions |
+| POST | `/generator/activity` | Bearer | Generate a cognitive activity |
+| POST | `/generator/socratic-hint` | Bearer | Generate a Socratic hint |
+| POST | `/generator/graph-expand/{domain_id}` | Bearer | Generate graph candidates |
+| POST | `/telemetry/events` | Bearer | Ingest learning events |
+| GET | `/telemetry/summary` | Bearer | Read telemetry summary |
+| POST | `/sync/push` | Bearer | Push client events |
+| GET | `/sync/pull` | Bearer | Pull authoritative deltas |
 
-## 7. Applied Capstone Projects
-- `GET /projects`: List available multi-task capstone projects.
-- `GET /projects/{project_id}`: Retrieve project details, rubric requirements, and milestone tasks.
-- `POST /projects/tasks/{task_id}/submit`: Submit milestone task solution, evaluate rubric criteria, and record Creation evidence.
+## Commerce and Certificates
 
----
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/commerce/products` | Public | Read product catalog |
+| POST | `/commerce/checkout` | Bearer | Create a provider checkout transaction |
+| POST | `/commerce/manual-payments` | Bearer | Submit a manual bKash transaction |
+| POST | `/commerce/webhooks/stripe` | Provider | Fulfill a Stripe event |
+| POST | `/commerce/webhooks/bkash` | Provider | Fulfill a bKash event |
+| GET | `/commerce/certificates/verify/{hash}` | Public | Verify a certificate |
 
-## 8. Commerce & Certificates
-- `POST /commerce/checkout`: Create a checkout transaction for courses, module bypasses, or certificates (Stripe USD or bKash BDT).
-- `POST /commerce/fulfill`: Fulfill transaction and grant entitlements.
-- `GET /commerce/certificates/verify/{hash}`: Public cryptographic SHA-256 certificate verification.
+A successful transaction creates an entitlement or enrollment through the fulfillment service. Manual bKash transaction references are unique.
 
----
+## Inquiries
 
-## 9. Admin Knowledge Workbench
-- `POST /admin/domains`: Create or update knowledge domain.
-- `POST /admin/concepts`: Create or update concept nodes.
-- `POST /admin/graph/edges`: Add directed prerequisite edge with cycle-detection prevention (`validate_graph_acyclic`).
-- `POST /admin/mastery-override`: Manually override learner concept state with immutable audit trail.
-- `PUT /admin/courses/{course_id}/pricing`: Update course price and module bypass fees.
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/inquiries` | Public | Persist a contact or enterprise inquiry |
 
----
+Inquiry administration is under `/admin/inquiries`.
 
-## 10. LLM Cognitive Activity Generator & AI Teacher
-- `POST /generator/generate-activity`: Generate structured cognitive activity across 7 archetypes from concept definition.
-- `POST /generator/socratic-hint`: Generate Socratic hints tailored to the 10 failure taxonomy categories.
-- `POST /generator/expand-taxonomy`: Generate candidate concept expansions and prerequisite edges.
+## Admin and RBAC
 
----
+Admin routes require one of `SUPER_ADMIN`, `CONTENT_ADMIN`, `AI_ADMIN`, `COMMERCE_ADMIN`, or `INSTRUCTOR`, depending on the operation.
 
-## 11. Telemetry & Closed-Loop Observability
-- `POST /telemetry/events`: Ingest rich block interactions, hesitation scores, and time-on-task.
-- `GET /telemetry/summary`: Retrieve learner telemetry summary, success rate, and failure taxonomy distributions.
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/admin/stats` | System overview |
+| POST | `/admin/domains` | Create/update a domain |
+| POST | `/admin/concepts` | Create/update a concept |
+| POST | `/admin/relations` | Add a prerequisite relation |
+| POST | `/admin/overrides/mastery` | Override mastery with audit context |
+| POST | `/admin/commerce/pricing` | Update pricing |
+| POST | `/admin/lessons/generate` | Generate authoring blocks |
+| POST | `/admin/lessons` | Persist a lesson |
+| GET | `/admin/inquiries` | Filter/search inquiries |
+| PATCH | `/admin/inquiries/{id}` | Update inquiry status |
+| DELETE | `/admin/inquiries/{id}` | Delete an inquiry |
+| GET | `/admin/commerce/payments` | List payment records |
+| POST | `/admin/commerce/payments/{id}/approve` | Fulfill a payment |
+| POST | `/admin/commerce/payments/{id}/reject` | Mark a payment failed |
+| DELETE | `/admin/commerce/payments/{id}` | Delete a payment record |
+| POST | `/admin/commerce/grants` | Grant a module entitlement |
 
----
+## System Diagnostics
 
-## 12. System Health & Diagnostics
-- `GET /system/info`: Retrieve system metadata, registered archetypes, and DB entity counts.
-- `GET /system/health`: Verify live database connectivity.
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/system/info` | Public | Platform metadata and entity counts |
+| GET | `/system/health` | Public | API/database health |
+| GET | `/health` | Public | Deployment health used by the frontend status button |
+
+## Error Contract
+
+FastAPI validation errors use HTTP `422`. Authentication failures use `401`; insufficient role uses `403`; missing resources use `404`; duplicate transaction references use `409`; business-rule failures use `400`.
+
+```json
+{
+  "detail": "Human-readable error message"
+}
+```

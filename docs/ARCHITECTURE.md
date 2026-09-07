@@ -1,4 +1,20 @@
-﻿# Unified Hybrid Adaptive Learning Platform — Architectural Specification
+﻿# Pentabrid Engine — System Architecture
+
+## 0. Implementation Status
+
+This document describes the current implementation, not a Firebase or Prisma proposal. The production authority is the FastAPI service and its relational database. Next.js owns presentation, routing, and browser interaction; it does not own account identity or authoritative learning state.
+
+```mermaid
+flowchart TB
+  User[Student / Instructor / Admin] --> Web[Next.js 16 UI]
+  Web -->|HTTPS + Bearer JWT| API[FastAPI API v1]
+  API --> Auth[JWT verification + role guards]
+  API --> Services[Domain services]
+  Services --> DB[(PostgreSQL)]
+  Services --> External[Gemini / Stripe / bKash]
+  Services --> Audit[Learning events + audit logs]
+  Web --> Local[Theme, drafts, temporary presentation state]
+```
 
 ## 1. System Overview & Hybrid Paradigm
 The **Unified Hybrid Adaptive Learning Platform** integrates two paradigms of learning into a single cognitive engine:
@@ -12,6 +28,25 @@ Both modes are backed by the **same unified data model and cognitive engine**:
 - 10-Category Failure Taxonomy & Closed-Loop Repair.
 - 7 Universal Cognitive Block Archetypes.
 - Dual Payment Gateways (Stripe USD & bKash BDT) and Cryptographic Certificate Verification (SHA-256).
+
+## 1A. Request and State Flow
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant N as Next.js
+  participant A as FastAPI
+  participant D as Database
+
+  B->>N: Render route / submit interaction
+  B->>N: Fetch /api/v1/* with Bearer JWT
+  N->>A: Forward API request or direct public API request
+  A->>A: Decode JWT and enforce role
+  A->>D: Read or mutate authoritative state
+  D-->>A: Persisted result
+  A-->>B: JSON response
+  B->>B: Update view and local presentation state
+```
 
 ---
 
@@ -70,7 +105,7 @@ Instead of code-only widgets, the platform provides 7 domain-agnostic renderers:
   - **bKash**: Mobile financial services in BDT for regional learners.
 - **Monetizable Entitlements**:
   - Full Course Track purchases.
-  - Instant Module Bypass unlocks (`/api/v1/commerce/checkout/module-bypass`).
+  - Instant Module Bypass unlocks (`/api/v1/commerce/checkout` or `/api/v1/commerce/manual-payments`).
   - Capstone project verification & Cryptographic Certificates.
 - **Cryptographic Verification**:
   - Every certificate receives a tamper-proof SHA-256 signature calculated from `(certificate_id, user_id, course_id, issue_timestamp, secret_salt)`.
@@ -79,30 +114,50 @@ Instead of code-only widgets, the platform provides 7 domain-agnostic renderers:
 
 ---
 
-## 6. State Authority & Offline Client Sync Architecture
+## 6. State Authority & Client Persistence
 
 ```
                      SERVER
-                 PostgreSQL
-            AUTHORITATIVE STATE LEDGER
-            (22 Models, Evidence Ledger,
-             Audit Logs, Certificates)
+                   PostgreSQL
+                AUTHORITATIVE STATE LEDGER
+                (Relational models, Evidence Ledger,
+                 Audit Logs, Certificates)
                        ▲
-                       │  Bidirectional HTTPS Sync
-                       │  (Vector Clock / Monotonic Sequence)
+                       │  HTTPS API / JWT
                        ▼
-                LOCAL CLIENT DEVICE
-                   SQLite
-            OFFLINE PROJECTION & EVENT QUEUE
-            (Local Caching, Immediate Offline Block
-             Interactions, Pending Sync Queue)
+                  BROWSER CLIENT
+                Presentation state and token cache
+                (No authoritative business state)
 ```
 
 ### State Authority Principles
 1. **Server Authoritative Store (PostgreSQL)**:
    - Contains the single source of truth for 5-D learner states, evidence ledger, transaction entitlements, certificates, and graph definitions.
    - Resolves merge conflicts deterministically using monotonic event sequence IDs and server-stamped timestamps.
-2. **Local Client Device Store (SQLite / IndexedDB)**:
-   - Serves as an **offline projection** and interactive cache.
-   - When offline (on Windows Desktop, Android, or Browser PWA), user interactions, block telemetry, and exercise attempts are appended to a local pending event queue (`local_learning_events`).
-   - Upon reconnecting, the client replays pending events to `/api/v1/telemetry/events` and `/api/v1/sessions/{id}/attempts`, receiving the authoritative reconciled learner state delta.
+2. **Local browser storage**:
+  - Stores only non-authoritative UI preferences and temporary presentation settings.
+  - JWT access tokens are stored under `penta_access_token` for the current web client session.
+  - Inquiries, payments, grants, lessons, learner state, telemetry, and entitlements are persisted through FastAPI.
+
+## 7. Deployment Topology
+
+```mermaid
+flowchart LR
+   DNS[Custom domain / DNS] --> Vercel[Vercel Next.js]
+   Vercel -->|NEXT_PUBLIC_API_URL| APIHost[FastAPI host or Vercel function]
+   APIHost --> Postgres[(Managed PostgreSQL)]
+   APIHost --> Gemini[Gemini API]
+   APIHost --> Stripe[Stripe]
+   APIHost --> Bkash[bKash]
+```
+
+The frontend and API may share a Vercel project through `/api/v1` rewrites, or run as separate deployments. `NEXT_PUBLIC_API_URL` must be the API origin only, without `/api`; `CORS_ORIGINS` contains frontend origins.
+
+## 8. Security Boundaries
+
+- Registration always assigns `STUDENT`; clients cannot self-assign elevated roles.
+- JWT signing uses `SECRET_KEY`; production must not use the development default.
+- Administrative routes use backend role guards, not only hidden frontend controls.
+- Passwords are stored as deterministic PBKDF2-SHA256 hashes salted from the server secret by the current implementation.
+- Payment webhooks and transaction fulfillment are server-side and idempotent.
+- AI generation can suggest content but does not directly mutate learner mastery.

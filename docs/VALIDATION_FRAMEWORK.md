@@ -4,7 +4,7 @@
 In accordance with scientific adaptive systems engineering, the platform has transitioned from initial MVP construction to **Systematic Validation and Calibration**.
 
 We distinguish between three distinct verification tiers:
-1. **Tier 1: Software Correctness**: Unit, integration, and transactional integrity testing verifying that code functions without errors (32 automated tests passing).
+1. **Tier 1: Software Correctness**: Unit, integration, and transactional integrity testing verifying that code functions without errors. The current repository build and compilation checks pass, but no automated Python tests are currently collected.
 2. **Tier 2: Adaptive Policy Validation**: Scenario simulation verifying that the deterministic recommendation engine selects sensible, pedagogy-sound actions when confronted with diverse learner archetypes.
 3. **Tier 3: Empirical Learning Effectiveness**: Quantitative comparison between adaptive recommendation policies ($v1.0.0$, $v1.1.0$) and linear baseline progression over synthetic learner cohorts.
 
@@ -80,8 +80,12 @@ Recommendation
 
 ---
 
-## 4. Empirical Benchmark Results
-Simulating cohorts of synthetic learners across policies over multiple turns demonstrated:
-- **Zero Redundant Drills**: Both `v1.0.0` and `v1.1.0` produced 0 redundant drill recommendations on already-mastered concepts ($\ge 0.80$).
-- **Active Remediation**: Closed-loop repair was triggered on 100% of prerequisite failure events.
-- **Policy Sensitivity**: The `ACCELERATED_CHALLENGE` policy achieved faster time-to-frontier progression on experienced cohorts compared to baseline.
+## 4. Benchmark Status
+
+The scenario definitions above are the intended validation plan and should be implemented as automated tests before claiming empirical results. The repository currently does not contain a collected test suite, so the following claims remain acceptance targets rather than verified release metrics:
+
+- Zero redundant drills for already-mastered concepts.
+- Correct remediation routing for prerequisite failure events.
+- Policy sensitivity across novice and experienced synthetic cohorts.
+
+Production reporting must distinguish implemented algorithms from executed test evidence.

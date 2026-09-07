@@ -46,5 +46,5 @@
 * **Date**: 2026-09-07
 * **Status**: Accepted
 * **Context**: Account registration and login must remain independent of Firebase Authentication, Google identity providers, and NextAuth. The FastAPI backend already owns the `users` table and JWT security model.
-* **Decision**: The frontend authenticates through `/api/v1/auth/register`, `/api/v1/auth/login`, and `/api/v1/auth/me`. Passwords are hashed with bcrypt in the backend, and the frontend stores only the signed access token. `JWT_SECRET` and `SECRET_KEY` remain backend deployment secrets.
+* **Decision**: The frontend authenticates through `/api/v1/auth/register`, `/api/v1/auth/login`, and `/api/v1/auth/me`. Passwords are hashed with the current PBKDF2-SHA256 backend implementation, and the frontend stores only the signed access token. `JWT_SECRET` and `SECRET_KEY` remain backend deployment secrets.
 * **Alternatives Rejected**: Firebase Authentication, Google OAuth, NextAuth CredentialsProvider, and browser-only/localStorage password accounts.

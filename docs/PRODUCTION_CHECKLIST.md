@@ -1,23 +1,59 @@
-﻿# Production Launch Checklist
+# Production Release Checklist
 
-## Status Summary: READY FOR LAUNCH (35 Backend Tests Passing + 0 Oxlint Errors)
+Status: **Ready for staging verification**
 
-| Domain | Audit Item | Verification Method | Status |
-| :--- | :--- | :--- | :--- |
-| **Security** | Secrets validation on startup | `Settings.validate_production_secrets()` | **VERIFIED** |
-| **Security** | Server-side key isolation (No AI keys to client) | Backend API abstraction | **VERIFIED** |
-| **Security** | Payment HMAC signature verification | `CommerceService.verify_stripe_webhook_signature` | **VERIFIED** |
-| **Security** | Payment idempotency deduplication | `Transaction.status == "SUCCESS"` guard | **VERIFIED** |
-| **Security** | Security headers (HSTS, CSP, X-Frame-Options) | `main.py` middleware stack | **VERIFIED** |
-| **Database** | Connection pooling & auto-reconnection | `pool_size=20`, `pool_pre_ping=True` | **VERIFIED** |
-| **Database** | Migration management | `alembic.ini` + `backend/alembic/env.py` | **VERIFIED** |
-| **Monetization** | Configurable pricing (USD & BDT) | `/api/v1/commerce/products` | **VERIFIED** |
-| **Monetization** | Strict entitlement boundary (No payment -> mastery) | Entitlement ledger | **VERIFIED** |
-| **Credentials** | SHA-256 Public Certificate Verification | `/certificates/[hash]` & `/verify/{hash}` | **VERIFIED** |
-| **Offline Sync** | SQLite Outbox Event Ingestion & Delta Pull | `/api/v1/sync/push` & `/api/v1/sync/pull` | **VERIFIED** |
-| **SEO & Crawling** | Dynamic `robots.txt` & `sitemap.xml` | Server-rendered Next.js routes | **VERIFIED** |
-| **SEO & Crawling** | Protected private routes (`noindex, nofollow`) | Disallowed `/dashboard`, `/admin`, `/learner` | **VERIFIED** |
-| **Legal & Trust** | Clinical Educational Disclaimer | Explicit disclaimer in `/terms` & homepage footer | **VERIFIED** |
-| **Analytics** | Privacy-conscious conversion tracking | `src/lib/analytics.js` (No answer payloads) | **VERIFIED** |
-| **Quality** | Full production smoke test | `backend/tests/test_production_smoke.py` | **VERIFIED (3/3 Passed)** |
-| **Quality** | Complete backend test suite | `python -m pytest backend/tests` | **VERIFIED (35/35 Passed)** |
+## Build and code
+
+- [x] `npm run build` passes.
+- [x] Focused Oxlint passes with only existing Fast Refresh warnings.
+- [x] Python modules compile.
+- [x] No active Firebase or NextAuth dependencies remain.
+- [x] `git diff --check` passes.
+- [ ] Add and run automated backend API tests.
+
+## Configuration
+
+- [ ] `DATABASE_URL` points to the managed production PostgreSQL database.
+- [ ] `SECRET_KEY` is a strong unique production secret.
+- [ ] `JWT_SECRET` is a strong unique production secret.
+- [ ] `ENVIRONMENT=production` is set for the backend.
+- [ ] `NEXT_PUBLIC_API_URL` contains the API origin only, without `/api`.
+- [ ] `CORS_ORIGINS` contains the exact frontend origins.
+- [ ] Gemini, Stripe, and bKash secrets are configured only server-side.
+
+## Database
+
+- [ ] Back up the current production database.
+- [ ] Verify the existing schema before `alembic stamp 20260907_baseline`.
+- [ ] Run `python -m alembic upgrade head` from `backend/`.
+- [ ] Run seed data only when appropriate for the target environment.
+- [ ] Confirm inquiry, transaction, entitlement, certificate, and audit tables.
+- [ ] Rehearse restore from backup in staging.
+
+## Authentication and authorization
+
+- [ ] Register a student account.
+- [ ] Log in and restore the session after refresh.
+- [ ] Confirm invalid credentials return `401`.
+- [ ] Confirm student access to admin endpoints returns `403`.
+- [ ] Confirm public registration cannot assign an elevated role.
+- [ ] Confirm expired/invalid JWTs are rejected.
+
+## Core workflows
+
+- [ ] Submit and review a contact inquiry.
+- [ ] Submit a manual bKash payment and reject it.
+- [ ] Approve a payment and verify entitlement creation.
+- [ ] Generate and save an admin lesson.
+- [ ] Start a learning session and submit an attempt.
+- [ ] Verify telemetry and learner-state updates.
+- [ ] Verify a certificate publicly.
+- [ ] Click the frontend server status control while API/database are healthy and degraded.
+
+## Operations
+
+- [ ] Configure `/health` monitoring.
+- [ ] Configure database backup schedule.
+- [ ] Configure Stripe and bKash webhook URLs.
+- [ ] Confirm logs include request IDs and response timing.
+- [ ] Document rollback for frontend, backend, and database migrations.

@@ -1,15 +1,13 @@
-# Penta Course Platform
+# Pentabrid Engine
 
-Penta Course is a modern, next-generation Learning Management System (LMS) built with Next.js, designed to provide interactive and engaging educational experiences. It supports rich content delivery including code steppers, terminal animations, and network diagrams, alongside traditional video and markdown content. 
-
-The platform features a unique progression system with quizzes and an optional microtransaction model to bypass specific modules.
+Pentabrid Engine is a hybrid adaptive learning platform for structured course tracks and graph-driven learning missions. The web client is a Next.js application; authoritative identity, learning state, commerce, telemetry, and content data live behind a FastAPI API and relational database.
 
 ## Tech Stack
 - **Frontend**: Next.js 16 (App Router), React 19
 - **Backend API**: Python FastAPI, SQLAlchemy, Pydantic, Alembic
 - **Styling & Animation**: TailwindCSS 4, Framer Motion
 - **Database**: PostgreSQL in production, SQLite for local development
-- **Authentication**: Backend-owned bcrypt password hashes and signed JWTs
+- **Authentication**: Backend-owned PBKDF2-SHA256 password hashes and signed JWTs
 - **AI Integration**: Google GenAI (`@google/genai`)
 - **Payments**: Stripe (Integrated via Transactions)
 
@@ -28,70 +26,17 @@ graph TD
 
 ---
 
-## Entity-Relationship (ER) Diagram (NoSQL Concept)
-
-*Note: In Firestore, these will be represented as Root Collections and Subcollections.*
+## System Boundaries
 
 ```mermaid
-erDiagram
-    USERS ||--o{ ACCOUNTS : has
-    USERS ||--o{ SESSIONS : has
-    USERS ||--o{ COURSES : "creates (Instructor)"
-    USERS ||--o{ ENROLLMENTS : enrolls
-    USERS ||--o{ PROGRESS : tracks
-    USERS ||--o{ TRANSACTIONS : performs
-
-    COURSES ||--o{ MODULES : contains
-    COURSES ||--o{ ENROLLMENTS : has
-
-    MODULES ||--o{ LESSONS : contains
-    MODULES ||--o| QUIZZES : has
-
-    LESSONS ||--o{ PROGRESS : tracked_by
-
-    USER {
-        String id PK
-        String name
-        String email
-        Role role
-    }
-    COURSE {
-        String id PK
-        String title
-        TrackCategory category
-        Difficulty difficulty
-        Int priceInCents
-        Boolean isPublished
-    }
-    MODULE {
-        String id PK
-        String title
-        Int orderIndex
-        Int bypassFeeInCents
-    }
-    LESSON {
-        String id PK
-        String title
-        Json contentJson
-        Int durationMin
-    }
-    QUIZ {
-        String id PK
-        Int passingScore
-        Json questionsJson
-    }
-    USER_PROGRESS {
-        String id PK
-        Boolean isCompleted
-        Boolean quizPassed
-        Boolean unlockedViaPay
-    }
-    TRANSACTION {
-        String id PK
-        Int amountInCents
-        TransactionStatus status
-        TransactionType type
-    }
+flowchart LR
+    Browser[Browser UI] --> Next[Next.js App Router]
+    Next -->|Bearer JWT| API[FastAPI /api/v1]
+    API --> ORM[SQLAlchemy models]
+    ORM --> DB[(PostgreSQL production<br/>SQLite development)]
+    API --> AI[Google Gemini server-side]
+    API --> Pay[Stripe / bKash]
+    API --> Obs[Telemetry and audit events]
 ```
 
 ---
@@ -127,9 +72,9 @@ usecaseDiagram
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v18+)
-- MariaDB Server
-- Stripe Account (for payment processing)
+- Node.js 24.x
+- Python 3.11+
+- PostgreSQL for production or SQLite for local development
 
 ### Setup Instructions
 
@@ -143,14 +88,14 @@ usecaseDiagram
    ```bash
    cp .env.example .env
    ```
-   *Make sure to configure your `DATABASE_URL`, NextAuth secrets, and Stripe API keys.*
+    *Configure the backend `DATABASE_URL`, `SECRET_KEY`, `JWT_SECRET`, and provider keys as needed.*
 
-3. **Database Setup**
-   Push the Prisma schema to your MariaDB instance:
+3. **Backend Database Setup**
    ```bash
-   npx prisma db push
+    cd backend
+    python -m alembic upgrade head
+    python -c "from backend.app.seeds.seed_data import seed_all; seed_all()"
    ```
-   *(Alternatively, use `npx prisma migrate dev` for migration history)*
 
 4. **Run the Development Server**
    ```bash
@@ -159,6 +104,23 @@ usecaseDiagram
    Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## Project Structure
-- `src/` - Application source code (Next.js App Router).
-- `prisma/` - Prisma ORM schema and configuration.
-- `public/` - Static assets.
+- `src/app/` - Next.js routes and page-level experiences.
+- `src/components/` - Navigation, learning, admin, marketing, and payment UI.
+- `src/context/` - JWT auth and device-local UI state providers.
+- `backend/app/api/v1/` - FastAPI route groups.
+- `backend/app/models/` - SQLAlchemy persistence models.
+- `backend/app/services/` - Adaptive, commerce, graph, telemetry, and AI services.
+- `backend/alembic/` - Database migration history.
+- `docs/` - Architecture, API, UI/UX, database, deployment, and operational references.
+
+## Documentation Map
+
+- [Architecture](docs/ARCHITECTURE.md) - runtime boundaries and data flows.
+- [API Reference](docs/API_REFERENCE.md) - implemented route catalog and auth rules.
+- [Database Design](docs/DATABASE.md) - tables, relationships, migrations, and state authority.
+- [UI/UX Design](docs/UI_UX.md) - screens, navigation, interaction states, and responsive behavior.
+- [Deployment](docs/DEPLOYMENT.md) - Vercel/API hosting, environment variables, and migration procedure.
+
+## Current Scope
+
+The authoritative backend path is implemented for authentication, roles, learning state, inquiries, commerce transactions, entitlements, admin authoring, telemetry, and adaptive learning. Theme preferences, hero presentation settings, and unsaved authoring drafts remain device-local by design. There is no Firebase or NextAuth dependency in the active application path.

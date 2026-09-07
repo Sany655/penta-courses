@@ -60,7 +60,7 @@
 4. Build Command: `next build`.
 
 ### D. Vercel Authentication Variables
-Registration and credentials login use the FastAPI backend, PostgreSQL, bcrypt password hashes, and signed JWTs. Firebase Authentication, Google authentication, and NextAuth are not required for account access. Add these variables to the backend deployment and the frontend Vercel project as appropriate:
+Registration and credentials login use the FastAPI backend, PostgreSQL, PBKDF2-SHA256 password hashes, and signed JWTs. Firebase Authentication, Google authentication, and NextAuth are not required for account access. Add these variables to the backend deployment and the frontend Vercel project as appropriate:
 
 ```bash
 JWT_SECRET=<long-random-secret>

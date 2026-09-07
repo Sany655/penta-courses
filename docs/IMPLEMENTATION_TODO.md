@@ -2,7 +2,7 @@
 
 ## Phase 0 — Repository Audit
 - [x] Inspect existing frontend architecture (Next.js 16, React 19, TailwindCSS 4, Framer Motion)
-- [x] Inspect existing backend & API routes (App router API handlers, Firebase Auth / NextAuth)
+- [x] Inspect existing backend & API routes and remove the legacy Firebase/NextAuth boundary
 - [x] Inspect database & storage (courses.json, courses.db SQLite)
 - [x] Inspect interactive blocks (Markdown, CodeStepper, AnimatedTerminal, NetworkFlow, QuizGatekeeper)
 - [x] Inspect payment system (BkashPaymentModal, Stripe integration patterns)
@@ -18,7 +18,7 @@
 - [x] Implement Session & Evidence models (LearningSession, Activity, Attempt, LearningEvidence, FailureEvent, LearningEvent, ExplorationItem)
 - [x] Implement Course ↔ Graph mapping models (Course, Module, Lesson, CourseDomainMap, LessonConceptMap)
 - [x] Implement Commerce & Admin models (Product, Transaction, Entitlement, ModuleBypass, Certificate, AdminAuditLog)
-- [x] Implement User, DeviceSession & Role Auth models (STUDENT, INSTRUCTOR, CONTENT_ADMIN, AI_ADMIN, COMMERCE_ADMIN, SUPER_ADMIN)
+- [x] Implement User, DeviceSession & role-auth models with backend JWTs (STUDENT, INSTRUCTOR, CONTENT_ADMIN, AI_ADMIN, COMMERCE_ADMIN, SUPER_ADMIN)
 - [x] Create database initialization and migration scripts (PostgreSQL / SQLite support)
 - [x] Create multi-domain seed data (Medicine, Law, Python, Economics)
 - [x] Implement basic CRUD & Graph REST endpoints
@@ -94,7 +94,7 @@
 
 ## Phase 11 — Commerce & Monetization Engine
 - [ ] Implement Stripe & bKash payment gateway service
-- [ ] Implement Module Bypass entitlement processor
+- [x] Implement Module Bypass entitlement processor and admin grant endpoints
 - [ ] Implement Idempotent webhook handling & transaction ledger
 - [ ] Implement Deterministic Certification exam eligibility
 

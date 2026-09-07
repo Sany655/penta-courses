@@ -1,65 +1,42 @@
-﻿# Production State Record (Machine-Readable)
+# Production State Record
 
 ```yaml
 system:
   app_name: "Unified Hybrid Adaptive Learning Platform"
-  brand_name: "PentaCourse"
-  brand_domain: "pentacourse.com"
+  brand_name: "Pentabrid Engine"
   version: "1.0.0"
-  status: "READY_FOR_DEPLOYMENT"
+  status: "READY_FOR_STAGING_VERIFICATION"
 
 architecture:
-  frontend_platform: "Next.js 16 (Vercel / Cloudflare Pages)"
-  backend_platform: "FastAPI / Python (Railway / Render / Docker)"
-  database_authoritative: "Managed PostgreSQL 15+ (Supabase / Neon / Railway / AWS RDS)"
-  database_client_offline: "SQLite / Local Storage with Outbox Sync Queue"
-  ai_provider: "Google Gemini API (Server-Side Isolation)"
-  storage_provider: "AWS S3 / Cloudflare R2"
+  frontend: "Next.js 16 / Vercel-compatible"
+  backend: "FastAPI / Python"
+  database: "PostgreSQL production, SQLite development"
+  authentication: "Backend JWT and server-controlled roles"
+  client_authority: "Presentation only; business state is API-owned"
 
-verification_metrics:
-  total_backend_tests: 35
-  passed_backend_tests: 35
-  failed_backend_tests: 0
-  frontend_oxlint_errors: 0
-  production_smoke_test_status: "PASSED (3/3)"
+verified_in_workspace:
+  next_build: "PASSED"
+  focused_oxlint: "PASSED_WITH_EXISTING_FAST_REFRESH_WARNINGS"
+  python_compile: "PASSED"
+  alembic_fresh_database: "PASSED_TO_20260907_ADD_INQUIRIES"
+  automated_pytest: "NO_TESTS_COLLECTED"
 
-monetization:
-  stripe_status: "CONFIGURED_LIVE_READY"
-  bkash_status: "CONFIGURED_LIVE_READY"
-  currencies_supported:
-    - "USD"
-    - "BDT"
-  products_configured:
-    - "tier-free-adaptive"
-    - "tier-pro-mission"
-    - "course tracks"
-    - "module-bypass"
-    - "certificates"
+required_before_production:
+  - "Configure production DATABASE_URL, SECRET_KEY, JWT_SECRET, and CORS_ORIGINS"
+  - "Verify existing production schema before stamping the Alembic baseline"
+  - "Run alembic upgrade head on staging and production"
+  - "Run registration, login, role, inquiry, payment, admin, and certificate smoke tests"
+  - "Configure and verify Stripe and bKash webhooks"
+  - "Add automated backend API tests"
+  - "Enable database backups and restore rehearsal"
 
-seo_and_discovery:
-  robots_txt: "CONFIGURED"
-  sitemap_xml: "CONFIGURED"
-  open_graph_metadata: "CONFIGURED"
-  structured_data_schemas:
-    - "Organization"
-    - "WebSite"
-    - "Course"
-    - "FAQPage"
+external_services:
+  ai: "Google Gemini server-side"
+  payments: ["Stripe", "bKash"]
+  storage: "Optional S3/R2 configuration"
 
-offline_sync:
-  push_endpoint: "/api/v1/sync/push"
-  pull_endpoint: "/api/v1/sync/pull"
-  conflict_resolution: "Server-Authoritative Sequence Stamping"
-
-trust_and_safety:
-  clinical_disclaimer_status: "ACTIVE"
-  certificate_public_verification: "ACTIVE (/certificates/[hash])"
-  terms_of_service: "ACTIVE (/terms)"
-  privacy_policy: "ACTIVE (/privacy)"
-  refund_policy: "ACTIVE (/refund)"
-
-rollback_procedure:
-  frontend: "Instant Vercel rollback"
-  backend: "Docker image rollback"
-  database: "alembic downgrade -1"
+health:
+  deployment_endpoint: "/health"
+  system_endpoint: "/api/v1/system/health"
+  frontend_indicator: "Navigation server-status button, 60-second polling"
 ```
