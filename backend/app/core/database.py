@@ -15,6 +15,7 @@ else:
     engine_kwargs["max_overflow"] = settings.DB_MAX_OVERFLOW
     engine_kwargs["pool_recycle"] = settings.DB_POOL_RECYCLE
     engine_kwargs["pool_pre_ping"] = True  # Automatic dead connection health check
+    engine_kwargs["connect_args"] = {"connect_timeout": 10}
 
 engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

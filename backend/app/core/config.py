@@ -83,6 +83,9 @@ class Settings:
             if "sqlite" in self.DATABASE_URL.lower():
                 missing.append("DATABASE_URL (Production must use PostgreSQL, not SQLite)")
 
+            if not self.DATABASE_URL.startswith(("postgresql://", "postgresql+psycopg2://")):
+                missing.append("DATABASE_URL (must use postgresql:// or postgresql+psycopg2://)")
+
             if missing:
                 raise ValueError(
                     f"CRITICAL PRODUCTION CONFIGURATION ERROR: The following required environment variables are missing or using insecure defaults in PRODUCTION: {', '.join(missing)}"

@@ -33,6 +33,16 @@
    ```
 3. Set environment variable `DATABASE_URL`.
 
+The variable must be configured where FastAPI runs. A local root `.env` file is not automatically loaded by the current application. For Vercel, add `DATABASE_URL` under **Project Settings -> Environment Variables -> Production**, then redeploy. For Railway or Render, add it to the backend service environment variables.
+
+After deployment, check:
+
+```text
+https://your-api-domain.com/health
+```
+
+Healthy output includes `status: "healthy"` and `database: "connected"`. If the API responds with `status: "degraded"`, the API is reachable but PostgreSQL is not; `database_error` reports the driver error class without exposing credentials.
+
 ### B. Backend API Deployment (Railway / Render / Docker)
 1. **Dockerfile Configuration**:
    ```dockerfile

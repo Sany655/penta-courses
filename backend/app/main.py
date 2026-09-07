@@ -79,6 +79,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.get("/health", tags=["Health Check"])
 def health_check():
     db_ok = False
+    db_error = None
     try:
         db = SessionLocal()
         db.execute(text("SELECT 1"))
@@ -86,11 +87,13 @@ def health_check():
         db_ok = True
     except Exception as e:
         logger.error(f"Health check DB ping failed: {str(e)}")
+        db_error = type(e).__name__
 
     return {
         "status": "healthy" if db_ok else "degraded",
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
         "database": "connected" if db_ok else "disconnected",
+        "database_error": db_error,
         "app_name": settings.APP_NAME
     }
