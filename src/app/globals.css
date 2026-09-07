@@ -330,11 +330,31 @@ body.light-theme div.text-slate-300 {
   color: #334155 !important;
 }
 
+body.light-theme p.text-slate-200,
+body.light-theme span.text-slate-200,
+body.light-theme div.text-slate-200,
+body.light-theme a.text-slate-200 {
+  color: #1e293b !important;
+}
+
+body.light-theme h1.text-slate-100,
+body.light-theme h2.text-slate-100,
+body.light-theme h3.text-slate-100,
+body.light-theme h4.text-slate-100,
+body.light-theme p.text-slate-100,
+body.light-theme span.text-slate-100,
+body.light-theme div.text-slate-100,
+body.light-theme a.text-slate-100 {
+  color: #0f172a !important;
+}
+
 body.light-theme p.text-white,
 body.light-theme h1.text-white,
 body.light-theme h2.text-white,
 body.light-theme h3.text-white,
-body.light-theme h4.text-white {
+body.light-theme h4.text-white,
+body.light-theme span.text-white,
+body.light-theme strong.text-white {
   color: #0f172a !important;
 }
 
@@ -343,7 +363,7 @@ body.light-theme .text-slate-500 {
 }
 
 body.light-theme .text-slate-600 {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
 /* Light mode card hovers */
