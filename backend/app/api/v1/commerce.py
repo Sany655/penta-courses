@@ -23,6 +23,14 @@ class WebhookOrderIn(BaseModel):
     item_id: str
     provider_payment_id: str
 
+class ManualPaymentIn(BaseModel):
+    item_type: str
+    item_id: str
+    item_title: str
+    amount_bdt: float
+    trx_id: str
+    sender_phone: Optional[str] = None
+
 @router.get("/products")
 def get_products(
     currency: str = "USD",
@@ -50,6 +58,38 @@ def create_checkout(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.post('/manual-payments', status_code=201)
+def submit_manual_payment(
+    data: ManualPaymentIn,
+    current_user: m.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    transaction_ref = data.trx_id.strip().upper()
+    if len(transaction_ref) < 6:
+        raise HTTPException(status_code=400, detail='A valid bKash transaction ID is required')
+    existing = db.query(m.Transaction).filter(m.Transaction.transaction_ref == transaction_ref).first()
+    if existing:
+        raise HTTPException(status_code=409, detail='This bKash transaction ID has already been submitted')
+
+    transaction = m.Transaction(
+        user_id=current_user.id,
+        provider='BKASH',
+        transaction_ref=transaction_ref,
+        amount_in_cents=round(data.amount_bdt * 100),
+        currency='BDT',
+        status='PENDING',
+        item_type=data.item_type.upper(),
+        item_id=data.item_id,
+        metadata_json={
+            'item_title': data.item_title,
+            'sender_phone': data.sender_phone or 'N/A',
+        },
+    )
+    db.add(transaction)
+    db.commit()
+    db.refresh(transaction)
+    return transaction
 
 @router.post("/webhooks/stripe")
 async def stripe_webhook(

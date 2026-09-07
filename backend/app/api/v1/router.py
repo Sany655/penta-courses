@@ -15,6 +15,7 @@ from backend.app.api.v1.generator import router as generator_router
 from backend.app.api.v1.telemetry import router as telemetry_router
 from backend.app.api.v1.system import router as system_router
 from backend.app.api.v1.sync import router as sync_router
+from backend.app.api.v1.inquiries import router as inquiries_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -33,3 +34,4 @@ api_router.include_router(generator_router)
 api_router.include_router(telemetry_router)
 api_router.include_router(system_router)
 api_router.include_router(sync_router)
+api_router.include_router(inquiries_router)

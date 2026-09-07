@@ -41,3 +41,10 @@
 * **Status**: Accepted
 * **Context**: Desktop (Tauri) and Mobile (Flutter) clients need offline learning capabilities.
 * **Decision**: Client stores mutations in a local SQLite outbox as immutable LearningEvent items. Server performs cursor-based sync with deterministic conflict resolution.
+
+## ADR-006: Backend-Owned Account Authentication
+* **Date**: 2026-09-07
+* **Status**: Accepted
+* **Context**: Account registration and login must remain independent of Firebase Authentication, Google identity providers, and NextAuth. The FastAPI backend already owns the `users` table and JWT security model.
+* **Decision**: The frontend authenticates through `/api/v1/auth/register`, `/api/v1/auth/login`, and `/api/v1/auth/me`. Passwords are hashed with bcrypt in the backend, and the frontend stores only the signed access token. `JWT_SECRET` and `SECRET_KEY` remain backend deployment secrets.
+* **Alternatives Rejected**: Firebase Authentication, Google OAuth, NextAuth CredentialsProvider, and browser-only/localStorage password accounts.

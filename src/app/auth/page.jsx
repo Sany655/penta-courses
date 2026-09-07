@@ -2,10 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Lock, Mail, User, Shield, ArrowRight, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
-import { signIn } from 'next-auth/react';
-import { ROLES } from '../../context/AuthContext';
+import { Lock, Mail, User, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,6 +14,7 @@ const Auth = () => {
   const [successMsg, setSuccessMsg] = useState('');
   
   const router = useRouter();
+  const { login, register } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,14 +22,9 @@ const Auth = () => {
     setSuccessMsg('');
 
     if (isLogin) {
-      const res = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-      });
-
-      if (res?.error) {
-        setError(res.error);
+      const result = await login(email, password);
+      if (!result.success) {
+        setError(result.message);
       } else {
         router.push('/');
         router.refresh();
@@ -41,27 +35,15 @@ const Auth = () => {
         return;
       }
       
-      try {
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password })
-        });
-        const data = await res.json();
-        
-        if (res.ok) {
-          setSuccessMsg('Account registered successfully! Redirecting...');
-          // Auto login after register
-          await signIn('credentials', { redirect: false, email, password });
-          setTimeout(() => {
-            router.push('/');
-            router.refresh();
-          }, 1200);
-        } else {
-          setError(data.message || 'Registration failed.');
-        }
-      } catch (err) {
-        setError('Network error occurred.');
+      const result = await register(name, email, password);
+      if (!result.success) {
+        setError(result.message);
+      } else {
+        setSuccessMsg('Account registered successfully! Redirecting...');
+        setTimeout(() => {
+          router.push('/');
+          router.refresh();
+        }, 1200);
       }
     }
   };

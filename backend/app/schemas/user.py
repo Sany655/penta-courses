@@ -7,7 +7,9 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
     role: Optional[str] = 'STUDENT'
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
+    email: str
+    full_name: Optional[str] = None
     password: str
 
 class UserLogin(BaseModel):

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, CheckCircle2, MessageSquare, Sparkles, Building2, Mail, ExternalLink, Globe, Shield } from 'lucide-react';
+import { Send, CheckCircle2, MessageSquare, Mail, ExternalLink, Globe, Shield } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
 
@@ -13,17 +13,19 @@ export const ContactSuggestionSection = () => {
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) return;
 
-    submitInquiry({
+    const result = await submitInquiry({
       name,
       email,
       company,
       category,
       message
     });
+
+    if (!result.success) return;
 
     setSubmitted(true);
     confetti({

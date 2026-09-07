@@ -5,9 +5,11 @@ Penta Course is a modern, next-generation Learning Management System (LMS) built
 The platform features a unique progression system with quizzes and an optional microtransaction model to bypass specific modules.
 
 ## Tech Stack
-- **Frontend & Backend**: Next.js 16 (App Router), React 19
+- **Frontend**: Next.js 16 (App Router), React 19
+- **Backend API**: Python FastAPI, SQLAlchemy, Pydantic, Alembic
 - **Styling & Animation**: TailwindCSS 4, Framer Motion
-- **Database & Services**: Firebase (Firestore, Authentication, Functions/App Hosting)
+- **Database**: PostgreSQL in production, SQLite for local development
+- **Authentication**: Backend-owned bcrypt password hashes and signed JWTs
 - **AI Integration**: Google GenAI (`@google/genai`)
 - **Payments**: Stripe (Integrated via Transactions)
 
@@ -18,12 +20,10 @@ The platform features a unique progression system with quizzes and an optional m
 ```mermaid
 graph TD
     Client[Client Browser] -->|HTTP / React Server Components| NextJS[Next.js App Router]
-    NextJS -->|Server Actions / Firebase SDK| Auth[Firebase Auth]
-    NextJS -->|Firebase Admin SDK| DB[(Firestore NoSQL)]
-    NextJS -->|API Requests| Stripe[Stripe API]
-    NextJS -->|Prompts| GenAI[Google GenAI]
-    
-    Auth --> DB
+    NextJS[Next.js Frontend] -->|JWT HTTPS API| FastAPI[FastAPI Backend]
+    FastAPI --> DB[(PostgreSQL)]
+    FastAPI -->|Server-side prompts| GenAI[Google GenAI]
+    FastAPI -->|Payment APIs| Stripe[Stripe API]
 ```
 
 ---

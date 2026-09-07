@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, ROLES } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { signOut } from 'next-auth/react';
 import ServerStatusButton from './ServerStatusButton';
 import { 
   Sparkles, ChevronDown, Sun, Moon, LogOut, BookOpen, ExternalLink,
@@ -13,7 +12,7 @@ import {
 } from 'lucide-react';
 
 export default function NavigationBar() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const { toggleTheme, isDark } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
@@ -166,7 +165,7 @@ export default function NavigationBar() {
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);
-                    signOut();
+                    logout();
                     router.push('/auth');
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition font-medium text-left border-t border-slate-800/60 mt-1"

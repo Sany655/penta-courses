@@ -81,3 +81,25 @@ For each page below, **remove** the inline `<nav>` block and the wrapping `<div 
 - Run `npm run dev` and visually verify on desktop and mobile viewports
 - Confirm single header on all pages
 - Confirm nav links navigate to correct routes
+
+## Authentication Architecture Correction
+
+The account system is independent of Firebase, Google authentication, and NextAuth. The FastAPI backend is the authority for users, password hashes, roles, and JWTs.
+
+### Implemented
+- Frontend login calls `/api/v1/auth/login`.
+- Frontend registration calls `/api/v1/auth/register`.
+- Existing sessions restore through `/api/v1/auth/me`.
+- Access tokens are stored as `penta_access_token` and sent as bearer tokens.
+- Logout clears the backend token from the browser.
+- `SessionProvider` and active `next-auth` calls were removed from the frontend auth flow.
+- Production configuration now requires `JWT_SECRET`, `SECRET_KEY`, and `DATABASE_URL`, not Firebase credentials.
+
+### Backend Deployment Requirements
+- Deploy FastAPI with the same `/api/v1` routes used by the frontend.
+- Configure `DATABASE_URL` for the authoritative PostgreSQL database.
+- Configure strong `JWT_SECRET` and `SECRET_KEY` values.
+- Set `NEXT_PUBLIC_API_URL` in Vercel to the public FastAPI URL.
+
+### Remaining Legacy Boundary
+The admin lesson-generation/save routes under `src/app/api/admin/` still contain older NextAuth/Firebase integrations and are separate from account registration/login. They should be migrated to FastAPI admin endpoints before claiming the entire repository has zero Firebase dependencies.

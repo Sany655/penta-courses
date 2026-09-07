@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  CheckCircle2, Copy, Check, AlertCircle, 
-  Smartphone, ShieldCheck, ArrowRight, Zap, X, Lock, Clock
+  Copy, Check, AlertCircle,
+  Smartphone, ShieldCheck, ArrowRight, X, Lock, Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
@@ -42,7 +42,7 @@ export const BkashPaymentModal = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -58,19 +58,18 @@ export const BkashPaymentModal = ({
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const result = submitBkashPayment({
+    const result = await submitBkashPayment({
         itemType,
         itemId,
         itemTitle,
         amount: `${finalAmount} BDT`,
         trxId: trxId.trim().toUpperCase(),
         senderPhone: senderPhone.trim() || 'N/A'
-      });
+    });
 
-      setIsSubmitting(false);
+    setIsSubmitting(false);
 
-      if (result.success) {
+    if (result.success) {
         setIsSuccess(true);
         setTimeout(() => {
           if (onSuccess) onSuccess(result);
@@ -79,10 +78,9 @@ export const BkashPaymentModal = ({
           setTrxId('');
           setSenderPhone('');
         }, 2800);
-      } else {
-        setError(result.message || 'Payment submission failed.');
-      }
-    }, 1000);
+    } else {
+      setError(result.message || 'Payment submission failed.');
+    }
   };
 
   return (

@@ -16,3 +16,4 @@ from backend.app.models.commerce import (
     Product, Transaction, Entitlement, Enrollment, ModuleBypass, Certificate, AdminAuditLog
 )
 from backend.app.models.event import LearningEvent, EventType
+from backend.app.models.inquiry import Inquiry

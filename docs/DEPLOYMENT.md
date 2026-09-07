@@ -59,17 +59,41 @@
    ```
 4. Build Command: `next build`.
 
+### D. Vercel Authentication Variables
+Registration and credentials login use the FastAPI backend, PostgreSQL, bcrypt password hashes, and signed JWTs. Firebase Authentication, Google authentication, and NextAuth are not required for account access. Add these variables to the backend deployment and the frontend Vercel project as appropriate:
+
+```bash
+JWT_SECRET=<long-random-secret>
+SECRET_KEY=<long-random-secret>
+DATABASE_URL=postgresql+psycopg2://...
+NEXT_PUBLIC_API_URL=https://api.pentacourse.com
+```
+
+Generate secrets with `openssl rand -base64 32`. The frontend does not require Firebase or Google authentication credentials. Keep database credentials and signing secrets only in the backend deployment environment.
+
 ---
 
 ## 3. Database Migration & Seeding Commands
 
 ```bash
-# 1. Run Alembic Migrations against Production PostgreSQL
+# From the backend directory, run migrations against the configured DATABASE_URL.
+cd backend
 alembic upgrade head
 
-# 2. Run Idempotent Seed Data (4 Multi-Domain Knowledge Graphs)
+# Seed the four multi-domain knowledge graphs after the schema is ready.
 python -c "from backend.app.seeds.seed_data import seed_all; seed_all()"
 ```
+
+The migration chain now includes `20260907_baseline` for the existing SQLAlchemy schema followed by `20260907_add_inquiries` for persistent contact inquiries. For a new database, `alembic upgrade head` creates the complete schema. For an existing database that was created outside Alembic, verify it matches the models, run `alembic stamp 20260907_baseline`, then run `alembic upgrade head` to add inquiries. Never run the baseline upgrade against an existing database without checking its schema first.
+
+Before enabling production traffic, verify:
+
+```bash
+python -c "from backend.app.main import app; print(app.title)"
+python -c "from backend.app.core.config import settings; settings.validate_production_secrets(); print('production secrets valid')"
+```
+
+Manual bKash submissions, payment review, entitlements, and admin grants use the existing commerce tables and FastAPI admin endpoints.
 
 ---
 

@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useSession, signOut } from 'next-auth/react';
 
 const AuthContext = createContext();
 
@@ -8,30 +7,36 @@ export const ROLES = {
   ADMIN: 'ADMIN',
 };
 
+const normalizeUser = (account) => ({
+  ...account,
+  name: account.name || account.full_name || account.email,
+  role: account.role === 'SUPER_ADMIN' || account.role === 'AI_ADMIN' || account.role === 'CONTENT_ADMIN'
+    ? ROLES.ADMIN
+    : account.role,
+});
+
 export const AuthProvider = ({ children }) => {
-  const { data: session, status } = useSession();
-  const nextAuthUser = session?.user;
-
-  // Registered student accounts stored in localStorage (mock data fallback)
-  const [registeredUsers, setRegisteredUsers] = useState(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_registered_students') : null;
-    return saved ? JSON.parse(saved) : [];
-  });
-
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (nextAuthUser) {
-      // Find extra metadata from mock storage if it exists, otherwise use basic NextAuth data
-      const mockMeta = registeredUsers.find(u => u.email === nextAuthUser.email) || {};
-      setUser({
-        ...mockMeta,
-        ...nextAuthUser,
+    const token = localStorage.getItem('penta_access_token');
+    if (!token) return;
+
+    fetch('/api/v1/auth/me', {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store'
+    })
+      .then(response => {
+        if (!response.ok) throw new Error('Session expired');
+        return response.json();
+      })
+      .then(normalizeUser)
+      .then(setUser)
+      .catch(() => {
+        localStorage.removeItem('penta_access_token');
+        setUser(null);
       });
-    } else if (status === 'unauthenticated') {
-      setUser(null);
-    }
-  }, [nextAuthUser, status, registeredUsers]);
+  }, []);
   const [adminCredentials, setAdminCredentials] = useState(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_admin_creds') : null;
     return saved ? JSON.parse(saved) : {
@@ -50,23 +55,12 @@ export const AuthProvider = ({ children }) => {
     };
   });
 
-  const [transactions, setTransactions] = useState(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_bkash_txns') : null;
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [transactions, setTransactions] = useState([]);
 
   // Contact / Suggestions / Custom Track Inquiries
-  const [inquiries, setInquiries] = useState(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_inquiries') : null;
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [inquiries, setInquiries] = useState([]);
 
   // Persistent granted access dictionary: { [email]: string[] }
-  const [grantedAccessMap, setGrantedAccessMap] = useState(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('penta_granted_access') : null;
-    return saved ? JSON.parse(saved) : {};
-  });
-
   useEffect(() => {
     if (user) {
       localStorage.setItem('penta_user', JSON.stringify(user));
@@ -74,10 +68,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('penta_user');
     }
   }, [user]);
-
-  useEffect(() => {
-    localStorage.setItem('penta_registered_students', JSON.stringify(registeredUsers));
-  }, [registeredUsers]);
 
   useEffect(() => {
     localStorage.setItem('penta_admin_creds', JSON.stringify(adminCredentials));
@@ -88,118 +78,54 @@ export const AuthProvider = ({ children }) => {
   }, [bkashSettings]);
 
   useEffect(() => {
-    localStorage.setItem('penta_bkash_txns', JSON.stringify(transactions));
-  }, [transactions]);
+    const token = localStorage.getItem('penta_access_token');
+    if (!token || !['ADMIN', 'INSTRUCTOR'].includes(user?.role)) return;
+    const headers = { Authorization: `Bearer ${token}` };
+    Promise.all([
+      fetch('/api/v1/admin/inquiries', { headers }).then(response => response.ok ? response.json() : []),
+      fetch('/api/v1/admin/commerce/payments', { headers }).then(response => response.ok ? response.json() : [])
+    ]).then(([serverInquiries, serverTransactions]) => {
+      setInquiries(serverInquiries);
+      setTransactions(serverTransactions);
+    });
+  }, [user?.role]);
 
-  useEffect(() => {
-    localStorage.setItem('penta_inquiries', JSON.stringify(inquiries));
-  }, [inquiries]);
-
-  useEffect(() => {
-    localStorage.setItem('penta_granted_access', JSON.stringify(grantedAccessMap));
-  }, [grantedAccessMap]);
-
-  // Sync granted access with active user
-  useEffect(() => {
-    if (user?.email && grantedAccessMap[user.email]) {
-      const additionalUnlocked = grantedAccessMap[user.email];
-      setUser(prev => {
-        if (!prev) return prev;
-        const merged = Array.from(new Set([...(prev.unlockedModules || []), ...additionalUnlocked]));
-        if (merged.length !== (prev.unlockedModules || []).length) {
-          return {
-            ...prev,
-            unlockedModules: merged,
-            pendingModules: (prev.pendingModules || []).filter(id => !additionalUnlocked.includes(id))
-          };
-        }
-        return prev;
+  const authenticate = async (endpoint, payload) => {
+    try {
+      const response = await fetch(`/api/v1/auth/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { success: false, message: data.detail || data.message || 'Authentication failed.' };
+      }
+
+      localStorage.setItem('penta_access_token', data.access_token);
+      const normalizedUser = normalizeUser(data.user);
+      setUser(normalizedUser);
+      return { success: true, user: normalizedUser };
+    } catch {
+      return { success: false, message: 'Unable to reach the authentication server.' };
     }
-  }, [user?.email, grantedAccessMap]);
-
-  // Real Production Login
-  const login = (email, password) => {
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPassword = password.trim();
-
-    // Check Admin Login
-    if (cleanEmail === adminCredentials.email.toLowerCase() && cleanPassword === adminCredentials.password) {
-      const adminUser = {
-        id: 'usr_admin_01',
-        name: 'Root Administrator',
-        email: adminCredentials.email,
-        role: ROLES.ADMIN,
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-        unlockedModules: [],
-        bypassedModules: [],
-        pendingModules: [],
-        completedQuizzes: []
-      };
-      setUser(adminUser);
-      return { success: true, role: ROLES.ADMIN, user: adminUser };
-    }
-
-    // Check Student Accounts
-    const student = registeredUsers.find(
-      u => u.email.toLowerCase() === cleanEmail && u.password === cleanPassword
-    );
-
-    if (student) {
-      const granted = grantedAccessMap[student.email] || [];
-      const sessionUser = {
-        id: student.id,
-        name: student.name,
-        email: student.email,
-        role: ROLES.STUDENT,
-        avatar: student.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-        unlockedModules: Array.from(new Set([...(student.unlockedModules || ['module-1']), ...granted])),
-        bypassedModules: student.bypassedModules || [],
-        pendingModules: student.pendingModules || [],
-        completedQuizzes: student.completedQuizzes || []
-      };
-      setUser(sessionUser);
-      return { success: true, role: ROLES.STUDENT, user: sessionUser };
-    }
-
-    return { success: false, message: 'Invalid email or password.' };
   };
 
-  // Real Production Registration
-  const register = (name, email, password) => {
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanName = name.trim();
+  const login = (email, password) => authenticate('login', {
+    email: email.trim().toLowerCase(),
+    password: password.trim()
+  });
 
-    if (cleanEmail === adminCredentials.email.toLowerCase()) {
-      return { success: false, message: 'This email is reserved for system administration.' };
-    }
-
-    const existing = registeredUsers.find(u => u.email.toLowerCase() === cleanEmail);
-    if (existing) {
-      return { success: false, message: 'An account with this email already exists. Please sign in.' };
-    }
-
-    const newStudent = {
-      id: `usr_${Date.now()}`,
-      name: cleanName,
-      email: cleanEmail,
-      password: password.trim(),
-      role: ROLES.STUDENT,
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-      unlockedModules: ['module-1'],
-      bypassedModules: [],
-      pendingModules: [],
-      completedQuizzes: []
-    };
-
-    setRegisteredUsers(prev => [...prev, newStudent]);
-    setUser(newStudent);
-    return { success: true, user: newStudent };
-  };
+  const register = (name, email, password) => authenticate('register', {
+    full_name: name.trim(),
+    email: email.trim().toLowerCase(),
+    password: password.trim()
+  });
 
   // Logout
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('penta_access_token');
     localStorage.removeItem('penta_user');
   };
 
@@ -211,140 +137,128 @@ export const AuthProvider = ({ children }) => {
     setBkashSettings(prev => ({ ...prev, ...newSettings }));
   };
 
-  // Submit Suggestion / Contact Request
-  const submitInquiry = ({ name, email, company, category, message }) => {
-    const newInquiry = {
-      id: `inq_${Date.now()}`,
-      name: name.trim(),
-      email: email.trim(),
-      company: (company || 'Independent Practitioner').trim(),
-      category: category || 'Curriculum Suggestion',
-      message: message.trim(),
-      timestamp: new Date().toLocaleString(),
-      status: 'NEW'
-    };
-
-    setInquiries(prev => [newInquiry, ...prev]);
-    return { success: true, inquiry: newInquiry };
+  const authRequest = async (url, options = {}) => {
+    const token = localStorage.getItem('penta_access_token');
+    const response = await fetch(url, {
+      ...options,
+      headers: { ...options.headers, Authorization: `Bearer ${token}` }
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(data?.detail || 'Server request failed');
+    return data;
   };
 
-  const updateInquiryStatus = (id, newStatus) => {
-    setInquiries(prev => prev.map(inq => inq.id === id ? { ...inq, status: newStatus } : inq));
+  const submitInquiry = async (payload) => {
+    try {
+      const inquiry = await fetch('/api/v1/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(async response => {
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.detail || 'Inquiry submission failed');
+        return data;
+      });
+      setInquiries(prev => [inquiry, ...prev]);
+      return { success: true, inquiry };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
   };
 
-  const deleteInquiry = (id) => {
-    setInquiries(prev => prev.filter(inq => inq.id !== id));
+  const updateInquiryStatus = async (id, newStatus) => {
+    const inquiry = await authRequest(`/api/v1/admin/inquiries/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    setInquiries(prev => prev.map(item => item.id === id ? inquiry : item));
+    return { success: true, inquiry };
+  };
+
+  const deleteInquiry = async (id) => {
+    await authRequest(`/api/v1/admin/inquiries/${id}`, { method: 'DELETE' });
+    setInquiries(prev => prev.filter(item => item.id !== id));
+    return { success: true };
   };
 
   // Student submits payment -> status is PENDING (No automatic unlock)
-  const submitBkashPayment = ({ itemType, itemId, itemTitle, amount, trxId, senderPhone }) => {
-    const newTxn = {
-      id: `txn_${Date.now()}`,
-      studentEmail: user?.email || 'guest@pentabrid.io',
-      studentName: user?.name || 'Student User',
-      itemType: itemType || 'module',
-      itemId: itemId || 'module-bypass',
-      itemTitle: itemTitle || 'Gatekeeper Instant Bypass',
-      amount: amount || `${bkashSettings.defaultFeeBdt} BDT`,
-      trxId: trxId.toUpperCase(),
-      senderPhone: senderPhone || 'N/A',
-      timestamp: new Date().toLocaleString(),
-      status: 'PENDING'
-    };
-
-    setTransactions(prev => [newTxn, ...prev]);
-
-    // Tag the module as pending review for this student
-    if (itemId && user) {
-      const itemsToAdd = Array.isArray(itemId) ? itemId : [itemId];
-      setUser(prev => ({
-        ...prev,
-        pendingModules: Array.from(new Set([...(prev.pendingModules || []), ...itemsToAdd]))
-      }));
+  const submitBkashPayment = async ({ itemType, itemId, itemTitle, amount, trxId, senderPhone }) => {
+    try {
+      const transaction = await authRequest('/api/v1/commerce/manual-payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          item_type: itemType === 'module' ? 'MODULE_BYPASS' : 'COURSE',
+          item_id: itemId,
+          item_title: itemTitle,
+          amount_bdt: Number.parseFloat(String(amount).replace(/[^0-9.]/g, '')),
+          trx_id: trxId,
+          sender_phone: senderPhone
+        })
+      });
+      const txn = {
+        ...transaction,
+        trxId: transaction.transaction_ref,
+        itemTitle: transaction.metadata_json?.item_title,
+        senderPhone: transaction.metadata_json?.sender_phone,
+        status: transaction.status
+      };
+      setTransactions(prev => [txn, ...prev]);
+      return { success: true, message: 'Transaction submitted! Awaiting administrator verification.', txn };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
-
-    return { 
-      success: true, 
-      message: 'Transaction submitted! Awaiting administrator verification.',
-      txn: newTxn 
-    };
   };
 
   // Admin approves transaction -> access is granted to student
-  const approveTransaction = (txnId) => {
-    const targetTxn = transactions.find(t => t.id === txnId);
-    if (!targetTxn) return { success: false, message: 'Transaction not found.' };
-
-    const itemsToUnlock = Array.isArray(targetTxn.itemId) ? targetTxn.itemId : [targetTxn.itemId];
-
-    // Update transaction status
-    setTransactions(prev => prev.map(t => t.id === txnId ? { ...t, status: 'APPROVED' } : t));
-
-    // Save into persistent granted access map for that student
-    setGrantedAccessMap(prev => {
-      const existing = prev[targetTxn.studentEmail] || [];
-      return {
-        ...prev,
-        [targetTxn.studentEmail]: Array.from(new Set([...existing, ...itemsToUnlock]))
-      };
-    });
-
-    // If currently logged in user matches, unlock immediately
-    if (user?.email === targetTxn.studentEmail) {
-      setUser(prev => ({
-        ...prev,
-        unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), ...itemsToUnlock])),
-        bypassedModules: Array.from(new Set([...(prev.bypassedModules || []), ...itemsToUnlock])),
-        pendingModules: (prev.pendingModules || []).filter(id => !itemsToUnlock.includes(id))
-      }));
+  const approveTransaction = async (txnId) => {
+    try {
+      const transaction = await authRequest(`/api/v1/admin/commerce/payments/${txnId}/approve`, { method: 'POST' });
+      setTransactions(prev => prev.map(item => item.id === txnId ? { ...item, status: 'SUCCESS' } : item));
+      return { success: true, txn: transaction };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
-
-    return { success: true, txn: targetTxn };
   };
 
   // Admin rejects transaction
-  const rejectTransaction = (txnId, reason = 'Verification Failed') => {
-    const targetTxn = transactions.find(t => t.id === txnId);
-    if (!targetTxn) return { success: false };
-
-    setTransactions(prev => prev.map(t => t.id === txnId ? { ...t, status: 'REJECTED', rejectReason: reason } : t));
-
-    if (targetTxn && user?.email === targetTxn.studentEmail) {
-      const items = Array.isArray(targetTxn.itemId) ? targetTxn.itemId : [targetTxn.itemId];
-      setUser(prev => ({
-        ...prev,
-        pendingModules: (prev.pendingModules || []).filter(id => !items.includes(id))
-      }));
+  const rejectTransaction = async (txnId, reason = 'Verification Failed') => {
+    try {
+      await authRequest(`/api/v1/admin/commerce/payments/${txnId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      setTransactions(prev => prev.map(item => item.id === txnId ? { ...item, status: 'FAILED' } : item));
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
-
-    return { success: true };
   };
 
   // Admin manual direct grant
-  const manualGrantAccess = (studentEmail, moduleIdOrIds) => {
-    const itemsToUnlock = Array.isArray(moduleIdOrIds) ? moduleIdOrIds : [moduleIdOrIds];
-    
-    setGrantedAccessMap(prev => {
-      const existing = prev[studentEmail] || [];
-      return {
-        ...prev,
-        [studentEmail]: Array.from(new Set([...existing, ...itemsToUnlock]))
-      };
-    });
-
-    if (user?.email === studentEmail) {
-      setUser(prev => ({
-        ...prev,
-        unlockedModules: Array.from(new Set([...(prev.unlockedModules || []), ...itemsToUnlock])),
-        pendingModules: (prev.pendingModules || []).filter(id => !itemsToUnlock.includes(id))
-      }));
+  const manualGrantAccess = async (studentEmail, moduleId) => {
+    try {
+      await authRequest('/api/v1/admin/commerce/grants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_email: studentEmail, module_id: moduleId })
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
-
-    return { success: true };
   };
 
-  const deleteTransaction = (txnId) => {
-    setTransactions(prev => prev.filter(t => t.id !== txnId));
+  const deleteTransaction = async (txnId) => {
+    try {
+      await authRequest(`/api/v1/admin/commerce/payments/${txnId}`, { method: 'DELETE' });
+      setTransactions(prev => prev.filter(item => item.id !== txnId));
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
   };
 
   const unlockNextModule = (moduleId) => {

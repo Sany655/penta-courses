@@ -4,17 +4,16 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Plus, Trash2, ArrowUp, ArrowDown, Save, Eye, Terminal, 
+  Trash2, ArrowUp, ArrowDown, Save, Eye, Terminal,
   Code, Network, FileText, Sparkles, ShieldAlert, CheckCircle2, 
-  RotateCcw, Play, Layers, X, Edit3, Send 
+  Layers, X, Edit3, Send
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { 
   MarkdownBlock, 
   AnimatedTerminal, 
   CodeStepper, 
-  NetworkFlow, 
-  QuizGatekeeper 
+  NetworkFlow
 } from '../student/BlockRenderers';
 
 const blockIcons = {
@@ -29,6 +28,8 @@ export default function LessonBuilder() {
   const { user, isStaff } = useAuth();
 
   const [metadata, setMetadata] = useState({
+    courseId: '',
+    moduleId: '',
     courseName: 'Offensive Cybersecurity & Kernel Tradecraft',
     moduleName: 'Phase 3: Kernel Exploitation',
     lessonTitle: 'Arbitrary Read/Write via DKOM',
@@ -132,9 +133,12 @@ export default function LessonBuilder() {
     setIsGenerating(true);
 
     try {
-      const res = await fetch('/api/admin/generate-lesson', {
+      const res = await fetch('/api/v1/admin/lessons/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('penta_access_token')}`
+        },
         body: JSON.stringify({ prompt: llmPrompt })
       });
 
@@ -169,27 +173,38 @@ export default function LessonBuilder() {
     const payload = {
       metadata: {
         lessonTitle: metadata.lessonTitle || 'Untitled Lesson',
-        courseId: 'cuid_course_placeholder', // Hardcoded mock for now
-        moduleId: 'cuid_module_placeholder',
+        courseId: metadata.courseId,
+        moduleId: metadata.moduleId,
       },
       blocks,
       savedBy: user.email,
     };
     
     try {
-      const res = await fetch('/api/admin/save-lesson', {
+      const res = await fetch('/api/v1/admin/lessons', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('penta_access_token')}`
+        },
+        body: JSON.stringify({
+          course_id: payload.metadata.courseId,
+          module_id: payload.metadata.moduleId,
+          title: payload.metadata.lessonTitle,
+          blocks: payload.blocks
+        })
       });
       
-      if (!res.ok) throw new Error('Database save failed');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || 'Database save failed');
+      }
       
       setSaveToast(true);
       setTimeout(() => setSaveToast(false), 3000);
-    } catch (err) {
-      console.error(err);
-      alert('Note: Database save failed because Prisma is not connected to a MySQL instance yet.');
+    } catch (error) {
+      console.error(error);
+      alert(error.message || 'Unable to save lesson.');
     }
   };
 
@@ -241,6 +256,20 @@ export default function LessonBuilder() {
             <span>Curriculum Metadata</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+            <input
+              type="text"
+              placeholder="Course ID"
+              value={metadata.courseId}
+              onChange={(e) => setMetadata({ ...metadata, courseId: e.target.value })}
+              className="p-3 bg-[#05070a] border border-slate-800 rounded-xl text-slate-200 focus:border-cyan-500 focus:outline-none"
+            />
+            <input
+              type="text"
+              placeholder="Module ID"
+              value={metadata.moduleId}
+              onChange={(e) => setMetadata({ ...metadata, moduleId: e.target.value })}
+              className="p-3 bg-[#05070a] border border-slate-800 rounded-xl text-slate-200 focus:border-cyan-500 focus:outline-none"
+            />
             <input
               type="text"
               placeholder="Course Title"

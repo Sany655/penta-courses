@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import { 
-  Shield, Sparkles, LayoutDashboard, Settings, Lock, 
-  FileCode2, Smartphone, CreditCard, Trash2, CheckCircle2, 
-  Search, ExternalLink, RefreshCw, XCircle, UserCheck, Plus, Check,
-  MessageSquare, Mail, Building2, Clock, CheckCheck, Archive 
+  Shield, Sparkles, LayoutDashboard,
+  FileCode2, Smartphone, Trash2, CheckCircle2,
+  Search, XCircle, UserCheck, Plus, Check,
+  MessageSquare, Mail, Clock, CheckCheck
 } from 'lucide-react';
 import LessonBuilder from '../../components/admin/LessonBuilder';
 import { useAuth } from '../../context/AuthContext';
@@ -308,7 +308,6 @@ const BkashPaymentSettings = () => {
   const [accountType, setAccountType] = useState(bkashSettings?.accountType || 'Personal');
   const [defaultFeeBdt, setDefaultFeeBdt] = useState(bkashSettings?.defaultFeeBdt || '250');
   const [instructions, setInstructions] = useState(bkashSettings?.instructions || 'Send Money to the bKash number below with your email as Reference, then submit your Transaction ID (TrxID) for admin approval.');
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [actionNotice, setActionNotice] = useState('');
 
@@ -324,32 +323,34 @@ const BkashPaymentSettings = () => {
       defaultFeeBdt,
       instructions
     });
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
-  const handleApprove = (txnId, studentName, itemTitle) => {
-    const res = approveTransaction(txnId);
+  const handleApprove = async (txnId, studentName, itemTitle) => {
+    const res = await approveTransaction(txnId);
     if (res.success) {
       setActionNotice(`Verified & granted access for ${studentName} on ${itemTitle}!`);
       setTimeout(() => setActionNotice(''), 4000);
     }
   };
 
-  const handleReject = (txnId) => {
+  const handleReject = async (txnId) => {
     if (confirm('Reject this transaction? The student will remain locked until verified.')) {
-      rejectTransaction(txnId, 'Payment could not be verified with bKash statement');
-      setActionNotice(`Transaction ${txnId} marked as Rejected.`);
-      setTimeout(() => setActionNotice(''), 4000);
+      const result = await rejectTransaction(txnId, 'Payment could not be verified with bKash statement');
+      if (result.success) {
+        setActionNotice(`Transaction ${txnId} marked as Rejected.`);
+        setTimeout(() => setActionNotice(''), 4000);
+      }
     }
   };
 
-  const handleManualGrantSubmit = (e) => {
+  const handleManualGrantSubmit = async (e) => {
     e.preventDefault();
     if (!manualEmail) return;
-    manualGrantAccess(manualEmail.trim(), manualModuleId);
-    setActionNotice(`Direct access granted for ${manualEmail} on ${manualModuleId}!`);
-    setTimeout(() => setActionNotice(''), 4000);
+    const result = await manualGrantAccess(manualEmail.trim(), manualModuleId);
+    if (result.success) {
+      setActionNotice(`Direct access granted for ${manualEmail} on ${manualModuleId}!`);
+      setTimeout(() => setActionNotice(''), 4000);
+    }
   };
 
   const filteredTxns = transactions.filter(t => 
@@ -422,8 +423,8 @@ const BkashPaymentSettings = () => {
               <tbody className="divide-y divide-slate-800/60 font-mono">
                 {filteredTxns.map((txn) => {
                   const isPending = txn.status === 'PENDING';
-                  const isApproved = txn.status === 'APPROVED' || txn.status === 'VERIFIED';
-                  const isRejected = txn.status === 'REJECTED';
+                  const isApproved = txn.status === 'SUCCESS' || txn.status === 'APPROVED' || txn.status === 'VERIFIED';
+                  const isRejected = txn.status === 'FAILED' || txn.status === 'REJECTED';
 
                   return (
                     <tr key={txn.id} className={`hover:bg-slate-900/40 transition ${isPending ? 'bg-amber-500/5' : ''}`}>
