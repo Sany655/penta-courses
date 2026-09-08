@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -10,6 +11,9 @@ from backend.app.core.security import get_password_hash, verify_password
 from backend.app.services.admin_service import AdminService
 from backend.app.services.llm_generator import LLMCognitiveGeneratorService
 from backend.app.services.email_service import EmailService
+from backend.app.services.gemini_curriculum_service import GeminiCurriculumService
+
+logger = logging.getLogger("penta.admin")
 
 router = APIRouter(prefix='/admin', tags=['Admin Control Panel & Workbench'])
 
@@ -66,6 +70,12 @@ class LessonSaveIn(BaseModel):
     module_id: str
     title: str
     blocks: List[Dict[str, Any]]
+
+class SyllabusSynthesizeIn(BaseModel):
+    syllabus_text: str
+
+class SyllabusCreateCourseIn(BaseModel):
+    syllabus_data: Dict[str, Any]
 
 class InquiryStatusIn(BaseModel):
     status: str
@@ -175,24 +185,76 @@ def generate_lesson(
     if not prompt:
         raise HTTPException(status_code=400, detail='A lesson prompt is required')
 
-    activity = LLMCognitiveGeneratorService.generate_activity_payload(
-        archetype='sequence_engine',
-        concept_name=prompt,
-        domain_name='Multi-Domain',
-        difficulty=0.7
-    )
-    return {
-        'blocks': [{
-            'id': 'generated-sequence',
-            'type': 'markdown',
-            'content': {
-                'content': f'## {prompt}\n\n' + '\n'.join(
-                    f"- **{step['action']}** {step['rationale']}"
-                    for step in activity.get('steps', [])
-                )
+    try:
+        result = GeminiCurriculumService.generate_lesson_blocks(topic=prompt)
+        return result
+    except Exception as e:
+        logger.error(f"[Admin] Gemini lesson generation failed: {e}. Utilizing cognitive fallback.", exc_info=True)
+        activity = LLMCognitiveGeneratorService.generate_activity_payload(
+            archetype='sequence_engine',
+            concept_name=prompt[:50],
+            domain_name='Applied Computing',
+            difficulty=0.7
+        )
+        return {
+            'lessonTitle': prompt[:48],
+            'difficulty': 'Intermediate',
+            'blocks': [
+                {
+                    'id': f'gen-theory-{int(os.urandom(2).hex(), 16)}',
+                    'type': 'markdown',
+                    'content': {
+                        'content': f'### {prompt[:60]}\n\nThis module explores foundational mechanisms, constraints, and applications.\n\n' + '\n'.join(
+                            f"- **{step['action']}**: {step['rationale']}"
+                            for step in activity.get('steps', [])
+                        )
+                    }
+                }
+            ]
+        }
+
+@router.post('/syllabus/synthesize')
+def synthesize_syllabus(
+    data: SyllabusSynthesizeIn,
+    admin: m.User = Depends(require_admin)
+):
+    text = data.syllabus_text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail='Syllabus text is required')
+
+    try:
+        parsed = GeminiCurriculumService.parse_and_synthesize_syllabus(syllabus_text=text)
+        return {'success': True, 'syllabus': parsed}
+    except Exception as e:
+        logger.error(f"[Admin] Syllabus synthesis failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to synthesize syllabus: {str(e)}")
+
+@router.post('/syllabus/create-course')
+def create_course_from_syllabus(
+    data: SyllabusCreateCourseIn,
+    admin: m.User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    try:
+        course = GeminiCurriculumService.create_course_from_syllabus(
+            db=db,
+            syllabus_data=data.syllabus_data,
+            instructor_name=admin.full_name or "Penta Academic Faculty"
+        )
+        return {
+            'success': True,
+            'message': f"Course '{course.title}' created with {len(course.modules)} modules.",
+            'course': {
+                'id': course.id,
+                'title': course.title,
+                'slug': course.slug,
+                'modules': [{'id': m.id, 'title': m.title} for m in course.modules]
             }
-        }]
-    }
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"[Admin] Course creation from syllabus failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to save course: {str(e)}")
 
 @router.post('/lessons')
 def save_lesson(
