@@ -201,3 +201,109 @@ Ensure every unit in the syllabus is captured as a module, with 2-4 granular sug
         db.commit()
         db.refresh(course)
         return course
+
+    @classmethod
+    def parse_uploaded_document(cls, file_bytes: bytes, filename: str, mime_type: str, mode: str = "TOC") -> Dict[str, Any]:
+        """
+        Parses uploaded documents (PDFs, Markdown, text, or syllabus exports) natively via Gemini 2.5 Flash.
+        Handles up to 20MB inline PDF documents.
+        """
+        import base64
+
+        api_key = cls._get_api_key()
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+
+        system_instruction = """You are a senior academic curriculum architect on a universal cognitive learning platform.
+Analyze the provided document (such as a book Table of Contents, full syllabus, or textbook unit).
+Extract and structure the entire curriculum into a clean JSON object adhering to this schema:
+{
+  "title": "Clean Course or Book Title",
+  "courseCode": "Course Code or generated slug",
+  "category": "COMPUTER_SCIENCE" | "CYBERSECURITY" | "WEB_DEVELOPMENT" | "GENERAL_TECH" | "DATA_SCIENCE" | "EARLY_LEARNING",
+  "targetAudience": "Children | Primary | High School | University | Professional",
+  "difficulty": "Beginner" | "Intermediate" | "Advanced",
+  "credits": 1,
+  "estimatedHours": 24,
+  "description": "Comprehensive 2-3 sentence overview of this curriculum.",
+  "skills": ["Skill 1", "Skill 2", "Skill 3", "Skill 4"],
+  "modules": [
+    {
+      "unitNumber": 1,
+      "title": "Unit-1: Chapter/Unit Title",
+      "summary": "1 sentence scope overview",
+      "topics": ["Topic 1", "Topic 2"],
+      "suggestedLessons": [
+        {
+          "title": "Lesson Title",
+          "prompt": "Specific detailed topic prompt to generate an interactive lesson"
+        }
+      ]
+    }
+  ]
+}
+Ensure all chapters or units in the document are captured as distinct modules with suggested lesson prompts."""
+
+        parts = []
+        is_pdf = mime_type == "application/pdf" or filename.lower().endswith(".pdf")
+        if is_pdf:
+            b64_pdf = base64.b64encode(file_bytes).decode("utf-8")
+            parts.append({
+                "inlineData": {
+                    "mimeType": "application/pdf",
+                    "data": b64_pdf
+                }
+            })
+            parts.append({
+                "text": "Extract and structure the complete course, chapters, units, and lesson blueprint from this uploaded book/document."
+            })
+        else:
+            text_content = file_bytes.decode("utf-8", errors="ignore")
+            parts.append({
+                "text": f"Document content ({filename}):\n\n{text_content}"
+            })
+
+        payload = {
+            "contents": [{"parts": parts}],
+            "systemInstruction": {"parts": [{"text": system_instruction}]},
+            "generationConfig": {
+                "responseMimeType": "application/json",
+                "temperature": 0.3
+            }
+        }
+
+        response = requests.post(url, json=payload, timeout=90)
+        if not response.ok:
+            logger.error(f"[GeminiService] Document upload parsing failed: {response.status_code} - {response.text}")
+            raise RuntimeError(f"Gemini API returned {response.status_code}: {response.text}")
+
+        res_data = response.json()
+        raw_text = res_data["candidates"][0]["content"]["parts"][0]["text"]
+        return json.loads(raw_text)
+
+    @classmethod
+    def synthesize_and_commit_chapter(cls, db: Session, course_id: str, module_id: str, chapter_title: str, chapter_prompt: str) -> Dict[str, Any]:
+        """
+        Synthesizes an interactive lesson for a chapter and commits it directly to the database.
+        """
+        module = db.query(m.Module).filter(m.Module.id == module_id, m.Module.course_id == course_id).first()
+        if not module:
+            raise ValueError(f"Module {module_id} not found for course {course_id}")
+
+        lesson_data = cls.generate_lesson_blocks(topic=chapter_prompt or chapter_title)
+        
+        lesson = m.Lesson(
+            module_id=module.id,
+            title=lesson_data.get("lessonTitle") or chapter_title,
+            order_index=len(module.lessons),
+            content_blocks=lesson_data.get("blocks", [])
+        )
+        db.add(lesson)
+        db.commit()
+        db.refresh(lesson)
+
+        return {
+            "id": lesson.id,
+            "title": lesson.title,
+            "blocks_count": len(lesson_data.get("blocks", [])),
+            "lesson_data": lesson_data
+        }

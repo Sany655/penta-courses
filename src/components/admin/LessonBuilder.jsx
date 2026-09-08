@@ -7,7 +7,7 @@ import {
   Trash2, ArrowUp, ArrowDown, Save, Eye, Terminal,
   Code, Network, FileText, Sparkles, ShieldAlert, CheckCircle2, 
   Layers, X, Edit3, Send, BookOpen, Plus, ExternalLink,
-  HelpCircle, RefreshCw, Check
+  HelpCircle, RefreshCw, Check, UploadCloud, FileUp, FileCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -54,12 +54,19 @@ export default function LessonBuilder() {
   const [llmPrompt, setLlmPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Syllabus Ingestion State
+  // Syllabus & Document Ingestion State
+  const [ingestMode, setIngestMode] = useState('upload'); // 'upload' | 'text'
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const [syllabusText, setSyllabusText] = useState('');
   const [isSynthesizingSyllabus, setIsSynthesizingSyllabus] = useState(false);
   const [synthesizedCourse, setSynthesizedCourse] = useState(null);
+  const [createdCourseId, setCreatedCourseId] = useState(null);
+  const [createdCourseModules, setCreatedCourseModules] = useState([]);
   const [isPublishingCourse, setIsPublishingCourse] = useState(false);
   const [publishCourseSuccess, setPublishCourseSuccess] = useState(null);
+  const [committingKey, setCommittingKey] = useState(null);
+  const [committedLessons, setCommittedLessons] = useState({});
 
   // Toast
   const [saveToast, setSaveToast] = useState(false);
@@ -234,11 +241,54 @@ export default function LessonBuilder() {
 
       const data = await res.json();
       setSynthesizedCourse(data.syllabus);
+      setCreatedCourseId(null);
+      setCreatedCourseModules([]);
+      setCommittedLessons({});
     } catch (error) {
       console.error(error);
       alert(error.message || 'Error synthesizing syllabus.');
     } finally {
       setIsSynthesizingSyllabus(false);
+    }
+  };
+
+  // Document Upload (PDF / TXT / MD) via Gemini 2.5 Flash
+  const handleDocumentUpload = async (docMode = 'curriculum') => {
+    if (!uploadedFile) {
+      alert('Please choose a PDF or document file first.');
+      return;
+    }
+    setIsUploadingDoc(true);
+    setPublishCourseSuccess(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+      formData.append('mode', docMode);
+
+      const res = await fetch('/api/v1/admin/syllabus/upload-document', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('penta_access_token')}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to process document with Gemini AI');
+      }
+
+      const data = await res.json();
+      setSynthesizedCourse(data.syllabus);
+      setCreatedCourseId(null);
+      setCreatedCourseModules([]);
+      setCommittedLessons({});
+    } catch (error) {
+      console.error(error);
+      alert(error.message || 'Error processing uploaded document.');
+    } finally {
+      setIsUploadingDoc(false);
     }
   };
 
@@ -262,13 +312,67 @@ export default function LessonBuilder() {
       }
 
       const data = await res.json();
-      setPublishCourseSuccess(`Course '${data.course.title}' published with ${data.course.modules?.length} modules!`);
+      setCreatedCourseId(data.course.id);
+      setCreatedCourseModules(data.course.modules || []);
+      setPublishCourseSuccess(`Course '${data.course.title}' successfully published to database with ${data.course.modules?.length} modules! You can now 1-click synthesize individual unit lessons below.`);
       loadCourses();
     } catch (error) {
       console.error(error);
       alert(error.message || 'Error publishing course.');
     } finally {
       setIsPublishingCourse(false);
+    }
+  };
+
+  // 1-Click Chapter Generation and Direct DB Commit
+  const handleQuickCommitChapter = async (moduleIndex, lessonIndex, lessonObj) => {
+    const key = `${moduleIndex}-${lessonIndex}`;
+    setCommittingKey(key);
+
+    try {
+      let targetCourseId = createdCourseId;
+      let targetModuleId = null;
+
+      if (createdCourseModules && createdCourseModules[moduleIndex]) {
+        targetModuleId = createdCourseModules[moduleIndex].id;
+      }
+
+      if (!targetCourseId || !targetModuleId) {
+        // Fallback: load to canvas
+        setShowSyllabusModal(false);
+        handleGenerateWithAI(lessonObj.prompt || lessonObj.title);
+        return;
+      }
+
+      const res = await fetch('/api/v1/admin/syllabus/synthesize-chapter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('penta_access_token')}`
+        },
+        body: JSON.stringify({
+          course_id: targetCourseId,
+          module_id: targetModuleId,
+          chapter_title: lessonObj.title,
+          chapter_prompt: lessonObj.prompt || lessonObj.title
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to synthesize and save chapter');
+      }
+
+      const data = await res.json();
+      setCommittedLessons(prev => ({
+        ...prev,
+        [key]: { lessonId: data.lesson.id, blockCount: data.blocks_created }
+      }));
+    } catch (error) {
+      console.error(error);
+      alert(error.message || 'Error generating chapter lesson.');
+    } finally {
+      setCommittingKey(null);
     }
   };
 
@@ -700,38 +804,134 @@ export default function LessonBuilder() {
               <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar font-mono text-xs">
                 {!synthesizedCourse ? (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-slate-300 font-bold">Paste Raw Syllabus / Curriculum Text</label>
-                      <span className="text-[11px] text-slate-500">Supports OCR text from books, PDFs, and Copilot</span>
-                    </div>
-
-                    <textarea
-                      rows={12}
-                      value={syllabusText}
-                      onChange={(e) => setSyllabusText(e.target.value)}
-                      placeholder="Paste Course Contents, Units, Course Code, Objectives, etc..."
-                      className="w-full p-4 bg-[#05070a] border border-slate-800 rounded-2xl text-slate-200 text-xs focus:border-purple-500 focus:outline-none"
-                    />
-
-                    <div className="flex justify-end">
+                    {/* Ingestion Mode Switcher */}
+                    <div className="flex items-center gap-2 p-1 bg-[#05070a] border border-slate-800 rounded-xl w-fit">
                       <button
-                        onClick={handleSynthesizeSyllabus}
-                        disabled={isSynthesizingSyllabus || !syllabusText.trim()}
-                        className="px-6 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold transition flex items-center gap-2 shadow-sm disabled:opacity-40"
+                        type="button"
+                        onClick={() => setIngestMode('upload')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                          ingestMode === 'upload' 
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm' 
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
                       >
-                        {isSynthesizingSyllabus ? (
-                          <>
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            <span>Synthesizing Full Course Structure...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>Synthesize Universal Curriculum</span>
-                          </>
-                        )}
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>Upload Book PDF / Document</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIngestMode('text')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                          ingestMode === 'text' 
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm' 
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Paste Text / OCR Scraps</span>
                       </button>
                     </div>
+
+                    {ingestMode === 'upload' ? (
+                      <div className="space-y-4">
+                        <div className="border-2 border-dashed border-slate-800 hover:border-purple-500/50 bg-[#05070a] rounded-2xl p-8 text-center transition space-y-3 relative group">
+                          <input
+                            type="file"
+                            accept=".pdf,.txt,.md"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                setUploadedFile(e.target.files[0]);
+                              }
+                            }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center mx-auto group-hover:scale-105 transition">
+                            <FileUp className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-200">
+                              {uploadedFile ? uploadedFile.name : 'Click or Drag & Drop Book PDF or Curriculum Document'}
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-1">
+                              {uploadedFile 
+                                ? `Size: ${(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB • Ready for AI Scan` 
+                                : 'Supports .pdf, .txt, .md (Up to 20MB)'}
+                            </p>
+                          </div>
+                          {uploadedFile && (
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>File Attached</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="bg-[#090d16] p-4 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                          <p className="font-bold text-slate-300">How Gemini 2.5 Ingestion Works:</p>
+                          <p>• Gemini 2.5 Flash reads native document pages (including 100+ page books or children&#39;s readers).</p>
+                          <p>• It scans the Table of Contents & chapter outlines to build your course units first.</p>
+                          <p>• Once published, you can synthesize rich interactive lessons chapter-by-chapter with 1-click.</p>
+                        </div>
+
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleDocumentUpload('curriculum')}
+                            disabled={isUploadingDoc || !uploadedFile}
+                            className="px-6 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold transition flex items-center gap-2 shadow-sm disabled:opacity-40"
+                          >
+                            {isUploadingDoc ? (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                <span>Analyzing Document with Gemini 2.5...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>Extract Course Structure from PDF</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <label className="text-slate-300 font-bold">Paste Raw Syllabus / Curriculum Text</label>
+                          <span className="text-[11px] text-slate-500">Supports OCR text from books, PDFs, and Copilot</span>
+                        </div>
+
+                        <textarea
+                          rows={12}
+                          value={syllabusText}
+                          onChange={(e) => setSyllabusText(e.target.value)}
+                          placeholder="Paste Course Contents, Units, Course Code, Objectives, etc..."
+                          className="w-full p-4 bg-[#05070a] border border-slate-800 rounded-2xl text-slate-200 text-xs focus:border-purple-500 focus:outline-none"
+                        />
+
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={handleSynthesizeSyllabus}
+                            disabled={isSynthesizingSyllabus || !syllabusText.trim()}
+                            className="px-6 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold transition flex items-center gap-2 shadow-sm disabled:opacity-40"
+                          >
+                            {isSynthesizingSyllabus ? (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                <span>Synthesizing Full Course Structure...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>Synthesize Universal Curriculum</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -759,13 +959,18 @@ export default function LessonBuilder() {
 
                       <div className="flex items-center justify-between pt-2">
                         <button
-                          onClick={() => setSynthesizedCourse(null)}
+                          type="button"
+                          onClick={() => {
+                            setSynthesizedCourse(null);
+                            setPublishCourseSuccess(null);
+                          }}
                           className="text-xs text-slate-400 hover:text-white underline"
                         >
-                          &larr; Re-paste / Edit Syllabus Text
+                          &larr; Re-analyze / Choose Another File
                         </button>
 
                         <button
+                          type="button"
                           onClick={handlePublishCourseToDB}
                           disabled={isPublishingCourse || Boolean(publishCourseSuccess)}
                           className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition disabled:opacity-40"
@@ -778,7 +983,7 @@ export default function LessonBuilder() {
                           ) : (
                             <>
                               <Save className="w-3.5 h-3.5" />
-                              <span>{publishCourseSuccess ? 'Published to DB' : 'Publish Entire Course to Database'}</span>
+                              <span>{publishCourseSuccess ? 'Published to DB ✓' : 'Publish Entire Course to Database'}</span>
                             </>
                           )}
                         </button>
@@ -787,9 +992,16 @@ export default function LessonBuilder() {
 
                     {/* Extracted Modules Tree */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                        Extracted Units & Interactive Lesson Blueprints:
-                      </h4>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                          Extracted Units & Interactive Lesson Blueprints:
+                        </h4>
+                        {createdCourseId && (
+                          <span className="text-[10px] text-emerald-400 font-mono">
+                            Target Course ID: {createdCourseId}
+                          </span>
+                        )}
+                      </div>
 
                       {synthesizedCourse.modules?.map((mod, mIdx) => (
                         <div key={mIdx} className="p-4 rounded-xl bg-[#05070a] border border-slate-800 space-y-3">
@@ -800,21 +1012,65 @@ export default function LessonBuilder() {
                           <p className="text-[11px] text-slate-400">{mod.summary}</p>
 
                           <div className="space-y-1.5 pt-1 border-t border-slate-900">
-                            {mod.suggestedLessons?.map((les, lIdx) => (
-                              <div key={lIdx} className="flex items-center justify-between p-2 rounded-lg bg-[#090d16] border border-slate-800/80 hover:border-cyan-500/40 transition">
-                                <span className="text-[11px] text-slate-200">{les.title}</span>
-                                <button
-                                  onClick={() => {
-                                    setShowSyllabusModal(false);
-                                    handleGenerateWithAI(les.prompt || les.title);
-                                  }}
-                                  className="px-2.5 py-1 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[10px] font-bold transition flex items-center gap-1"
-                                >
-                                  <Sparkles className="w-3 h-3" />
-                                  <span>Generate Lesson</span>
-                                </button>
-                              </div>
-                            ))}
+                            {mod.suggestedLessons?.map((les, lIdx) => {
+                              const key = `${mIdx}-${lIdx}`;
+                              const isCommitting = committingKey === key;
+                              const committed = committedLessons[key];
+
+                              return (
+                                <div key={lIdx} className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-lg bg-[#090d16] border border-slate-800/80 hover:border-cyan-500/40 transition gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <span className="text-[11px] text-slate-200 block truncate">{les.title}</span>
+                                    {les.prompt && (
+                                      <span className="text-[9px] text-slate-500 block truncate">{les.prompt}</span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    {createdCourseId ? (
+                                      committed ? (
+                                        <div className="px-2.5 py-1 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold flex items-center gap-1">
+                                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                          <span>Saved ({committed.blockCount} blks)</span>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          disabled={isCommitting}
+                                          onClick={() => handleQuickCommitChapter(mIdx, lIdx, les)}
+                                          className="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[10px] font-bold transition flex items-center gap-1 border border-emerald-500/40 disabled:opacity-50"
+                                        >
+                                          {isCommitting ? (
+                                            <>
+                                              <RefreshCw className="w-3 h-3 animate-spin" />
+                                              <span>Generating...</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Sparkles className="w-3 h-3 text-emerald-400" />
+                                              <span>Auto-Gen & Save</span>
+                                            </>
+                                          )}
+                                        </button>
+                                      )
+                                    ) : null}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setShowSyllabusModal(false);
+                                        handleGenerateWithAI(les.prompt || les.title);
+                                      }}
+                                      className="px-2 py-1 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[10px] font-bold transition flex items-center gap-1"
+                                      title="Open in Builder Canvas to manually review & edit blocks"
+                                    >
+                                      <Edit3 className="w-3 h-3" />
+                                      <span>Edit in Canvas</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}

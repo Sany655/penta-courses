@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.api.v1.auth import get_current_user
@@ -76,6 +76,12 @@ class SyllabusSynthesizeIn(BaseModel):
 
 class SyllabusCreateCourseIn(BaseModel):
     syllabus_data: Dict[str, Any]
+
+class ChapterSynthesizeIn(BaseModel):
+    course_id: str
+    module_id: str
+    chapter_title: str
+    chapter_prompt: Optional[str] = None
 
 class InquiryStatusIn(BaseModel):
     status: str
@@ -255,6 +261,48 @@ def create_course_from_syllabus(
         db.rollback()
         logger.error(f"[Admin] Course creation from syllabus failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to save course: {str(e)}")
+
+@router.post('/syllabus/upload-document')
+async def upload_syllabus_document(
+    file: UploadFile = File(...),
+    mode: str = Form("TOC"),
+    admin: m.User = Depends(require_admin)
+):
+    try:
+        content_bytes = await file.read()
+        if len(content_bytes) > 20 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File size exceeds 20MB limit.")
+
+        parsed = GeminiCurriculumService.parse_uploaded_document(
+            file_bytes=content_bytes,
+            filename=file.filename or "uploaded_document.pdf",
+            mime_type=file.content_type or "application/pdf",
+            mode=mode
+        )
+        return {'success': True, 'syllabus': parsed}
+    except Exception as e:
+        logger.error(f"[Admin] Document analysis failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Document analysis failed: {str(e)}")
+
+@router.post('/syllabus/synthesize-chapter')
+def synthesize_chapter(
+    data: ChapterSynthesizeIn,
+    admin: m.User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    try:
+        result = GeminiCurriculumService.synthesize_and_commit_chapter(
+            db=db,
+            course_id=data.course_id,
+            module_id=data.module_id,
+            chapter_title=data.chapter_title,
+            chapter_prompt=data.chapter_prompt or data.chapter_title
+        )
+        return {'success': True, 'lesson': result}
+    except Exception as e:
+        db.rollback()
+        logger.error(f"[Admin] Chapter synthesis failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Chapter synthesis failed: {str(e)}")
 
 @router.post('/lessons')
 def save_lesson(
