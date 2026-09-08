@@ -13,8 +13,41 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   
+  // Forgot Password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotStatus, setForgotStatus] = useState(null);
+  
   const router = useRouter();
   const { login, register } = useAuth();
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotStatus(null);
+
+    try {
+      const res = await fetch('/api/v1/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim().toLowerCase() })
+      });
+      const data = await res.json();
+      setForgotStatus({
+        success: true,
+        message: data.message || 'If an account matches that email, a password reset link has been dispatched.',
+        dev_reset_url: data.dev_reset_url
+      });
+    } catch {
+      setForgotStatus({
+        success: false,
+        message: 'Failed to reach the server. Please try again.'
+      });
+    } finally {
+      setForgotLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -138,6 +171,21 @@ const Auth = () => {
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#05070a] border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none text-xs"
               />
             </div>
+            {isLogin && (
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(email);
+                    setForgotStatus(null);
+                    setShowForgotPassword(true);
+                  }}
+                  className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
           </div>
           
           {error && (
@@ -162,6 +210,90 @@ const Auth = () => {
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
+
+        {/* Forgot Password Overlay */}
+        {showForgotPassword && (
+          <div className="absolute inset-0 bg-white dark:bg-[#090d16] p-8 rounded-3xl z-20 flex flex-col justify-between animate-fade-in border border-emerald-500/30">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-mono font-bold text-xs">
+                    ▲
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Recover Password</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-mono font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                Enter your registered account email. A secure, 15-minute single-use reset link will be dispatched.
+              </p>
+
+              <form onSubmit={handleForgotPassword} className="space-y-4 pt-2">
+                <div className="space-y-1">
+                  <label className="text-slate-700 dark:text-slate-300 text-xs">Email Address</label>
+                  <div className="relative">
+                    <Mail size={15} className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500" />
+                    <input
+                      type="email"
+                      placeholder="admin@pentabrid.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#05070a] border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                {forgotStatus && (
+                  <div className={`text-xs p-3.5 rounded-xl border space-y-2 ${
+                    forgotStatus.success
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {forgotStatus.success ? <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" /> : <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />}
+                      <span className="font-mono text-xs">{forgotStatus.message}</span>
+                    </div>
+                    {forgotStatus.dev_reset_url && (
+                      <div className="pt-2 border-t border-emerald-500/20">
+                        <span className="text-[10px] uppercase font-mono block text-emerald-400 font-bold mb-1">Direct Reset Link:</span>
+                        <a
+                          href={forgotStatus.dev_reset_url}
+                          className="font-mono text-[11px] underline break-all text-cyan-400 hover:text-cyan-300 block"
+                        >
+                          {forgotStatus.dev_reset_url} &rarr;
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold text-xs font-mono uppercase tracking-wide transition shadow-sm flex items-center justify-center gap-2"
+                >
+                  {forgotLoading ? 'Dispatching Link...' : 'Send Password Reset Link'}
+                </button>
+              </form>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(false)}
+              className="text-xs text-center font-mono text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 transition pt-4"
+            >
+              &larr; Return to Sign In
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

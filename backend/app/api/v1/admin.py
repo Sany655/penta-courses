@@ -5,8 +5,11 @@ from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.api.v1.auth import get_current_user
 import backend.app.models as m
+import backend.app.schemas.user as s_user
+from backend.app.core.security import get_password_hash, verify_password
 from backend.app.services.admin_service import AdminService
 from backend.app.services.llm_generator import LLMCognitiveGeneratorService
+from backend.app.services.email_service import EmailService
 
 router = APIRouter(prefix='/admin', tags=['Admin Control Panel & Workbench'])
 
@@ -359,3 +362,84 @@ def delete_payment(
         raise HTTPException(status_code=404, detail='Payment not found')
     db.delete(transaction)
     db.commit()
+
+@router.post('/security/change-password')
+def admin_change_password(
+    data: s_user.ChangePasswordRequest,
+    admin: m.User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    if not verify_password(data.current_password, admin.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current admin password verification failed."
+        )
+
+    if len(data.new_password.strip()) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 6 characters long."
+        )
+
+    admin.hashed_password = get_password_hash(data.new_password.strip())
+    db.commit()
+
+    EmailService.send_password_changed_notification(
+        to_email=admin.email,
+        user_name=admin.full_name or 'Administrator'
+    )
+
+    return {
+        "success": True,
+        "message": "Admin credentials updated successfully in database."
+    }
+
+@router.post('/security/request-reset-email')
+def admin_request_reset_email(
+    admin: m.User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    import os
+    import secrets
+    import hashlib
+    from datetime import datetime, timedelta, timezone
+    from backend.app.core.config import settings
+
+    # Invalidate previous unused reset tokens for this admin
+    db.query(m.PasswordResetToken).filter(
+        m.PasswordResetToken.user_id == admin.id,
+        m.PasswordResetToken.used_at == None
+    ).update({"used_at": datetime.now(timezone.utc)})
+
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(minutes=15)
+
+    reset_record = m.PasswordResetToken(
+        user_id=admin.id,
+        token_hash=token_hash,
+        expires_at=expires_at,
+        created_at=now
+    )
+    db.add(reset_record)
+    db.commit()
+
+    base_url = settings.FRONTEND_URL.rstrip('/')
+    reset_url = f"{base_url}/auth/reset-password?token={raw_token}"
+
+    EmailService.send_password_reset_email(
+        to_email=admin.email,
+        user_name=admin.full_name or 'Administrator',
+        reset_url=reset_url
+    )
+
+    response = {
+        "success": True,
+        "message": f"High-security password reset link dispatched to {admin.email}."
+    }
+    if not os.getenv("RESEND_API_KEY") and not os.getenv("SMTP_HOST"):
+        response["dev_reset_url"] = reset_url
+
+    return response
+
