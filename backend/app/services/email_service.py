@@ -135,23 +135,27 @@ class EmailService:
         # 2. Standard SMTP Provider
         if smtp_host:
             try:
+                import email.utils
                 smtp_port = int(os.getenv("SMTP_PORT", "587"))
-                smtp_user = os.getenv("SMTP_USER", "")
-                smtp_pass = os.getenv("SMTP_PASSWORD", "")
+                smtp_user = os.getenv("SMTP_USER", "").strip()
+                smtp_pass = os.getenv("SMTP_PASSWORD", "").replace(" ", "").strip()
                 smtp_use_tls = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+
+                clean_from = from_email.strip('"').strip("'")
+                envelope_sender = email.utils.parseaddr(clean_from)[1] or smtp_user
 
                 msg = MIMEMultipart('alternative')
                 msg['Subject'] = subject
-                msg['From'] = from_email
+                msg['From'] = clean_from
                 msg['To'] = to_email
                 msg.attach(MIMEText(html_content, 'html'))
 
-                server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
+                server = smtplib.SMTP(smtp_host, smtp_port, timeout=15)
                 if smtp_use_tls:
                     server.starttls()
                 if smtp_user and smtp_pass:
                     server.login(smtp_user, smtp_pass)
-                server.sendmail(from_email, [to_email], msg.as_string())
+                server.sendmail(envelope_sender, [to_email], msg.as_string())
                 server.quit()
                 logger.info(f"Email sent via SMTP to {to_email}")
                 return True
