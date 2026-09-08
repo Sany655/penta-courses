@@ -1,4 +1,4 @@
-from backend.app.models.user import User, DeviceSession, UserRole, PasswordResetToken
+from backend.app.models.user import User, DeviceSession, UserRole, PasswordResetToken, AuthAttempt
 from backend.app.models.domain import (
     Domain, Concept, Skill, ConceptRelation, SkillRelation, ConceptSkill,
     Resource, ResourceConcept, ConceptRelationType, ConceptType

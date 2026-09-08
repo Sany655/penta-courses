@@ -63,3 +63,14 @@ class PasswordResetToken(Base):
 
     user = relationship('User', back_populates='reset_tokens')
 
+
+class AuthAttempt(Base):
+    __tablename__ = 'auth_attempts'
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    ip_address = Column(String(64), nullable=False, index=True)
+    identifier = Column(String(255), nullable=True, index=True)  # normalized email or username
+    action = Column(String(50), default='login', nullable=False, index=True)  # 'login', 'forgot-password'
+    is_successful = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
+

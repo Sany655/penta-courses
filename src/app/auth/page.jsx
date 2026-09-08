@@ -13,6 +13,10 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   
+  // Security & Brute Force Defense
+  const [honeypot, setHoneypot] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+
   // Forgot Password state
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -22,8 +26,22 @@ const Auth = () => {
   const router = useRouter();
   const { login, register } = useAuth();
 
+  // Cooldown countdown effect
+  React.useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(() => {
+      setCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldown]);
+
   const handleForgotPassword = async (e) => {
     e.preventDefault();
+    if (honeypot) {
+      setForgotStatus({ success: false, message: 'Security validation failed.' });
+      return;
+    }
+
     setForgotLoading(true);
     setForgotStatus(null);
 
@@ -34,11 +52,18 @@ const Auth = () => {
         body: JSON.stringify({ email: forgotEmail.trim().toLowerCase() })
       });
       const data = await res.json();
-      setForgotStatus({
-        success: true,
-        message: data.message || 'If an account matches that email, a password reset link has been dispatched.',
-        dev_reset_url: data.dev_reset_url
-      });
+      if (!res.ok) {
+        setForgotStatus({
+          success: false,
+          message: data.detail || 'Failed to dispatch reset email. Please try again.'
+        });
+      } else {
+        setForgotStatus({
+          success: true,
+          message: data.message || 'If an account matches that email, a password reset link has been dispatched.',
+          dev_reset_url: data.dev_reset_url
+        });
+      }
     } catch {
       setForgotStatus({
         success: false,
@@ -54,10 +79,26 @@ const Auth = () => {
     setError('');
     setSuccessMsg('');
 
+    // Honeypot bot detection
+    if (honeypot) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setError('Security verification failed. Please try again.');
+      return;
+    }
+
+    // Cooldown lockout check
+    if (cooldown > 0) {
+      setError(`Access temporarily paused. Please wait ${cooldown} seconds before retrying.`);
+      return;
+    }
+
     if (isLogin) {
       const result = await login(email, password);
       if (!result.success) {
         setError(result.message);
+        if (result.status === 429 || (result.message && result.message.toLowerCase().includes('restricted'))) {
+          setCooldown(60);
+        }
       } else {
         router.push('/');
         router.refresh();
@@ -71,6 +112,7 @@ const Auth = () => {
       const result = await register(name, email, password);
       if (!result.success) {
         setError(result.message);
+        if (result.status === 429) setCooldown(60);
       } else {
         setSuccessMsg('Account registered successfully! Redirecting...');
         setTimeout(() => {
@@ -202,12 +244,37 @@ const Auth = () => {
             </div>
           )}
 
+          {/* Invisible Honeypot Trap for automated scripts */}
+          <div className="opacity-0 absolute -top-[9999px] -left-[9999px] h-0 w-0 pointer-events-none select-none overflow-hidden" aria-hidden="true" tabIndex={-1}>
+            <label htmlFor="auth_security_trap">Ignore this field</label>
+            <input
+              type="text"
+              id="auth_security_trap"
+              name="auth_security_trap"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
           <button
             type="submit"
-            className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wide transition shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 mt-2"
+            disabled={cooldown > 0}
+            className={`w-full py-3.5 rounded-xl text-xs font-mono uppercase tracking-wide transition flex items-center justify-center gap-2 mt-2 font-bold ${
+              cooldown > 0
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700'
+                : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+            }`}
           >
-            <span>{isLogin ? 'Sign In & Access Platform' : 'Complete Registration'}</span>
-            <ArrowRight className="w-4 h-4" />
+            {cooldown > 0 ? (
+              <span>Locked ({cooldown}s)</span>
+            ) : (
+              <>
+                <span>{isLogin ? 'Sign In & Access Platform' : 'Complete Registration'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </form>
 

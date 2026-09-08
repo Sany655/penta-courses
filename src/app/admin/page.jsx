@@ -6,9 +6,10 @@ import {
   FileCode2, Smartphone, Trash2, CheckCircle2,
   Search, XCircle, UserCheck, Plus, Check,
   MessageSquare, Mail, Clock, CheckCheck,
-  Network, Brain, GitBranch, Sliders
+  Network, Brain, GitBranch, Sliders, ExternalLink
 } from 'lucide-react';
 import LessonBuilder from '../../components/admin/LessonBuilder';
+import SecuritySettingsCard from '../../components/SecuritySettingsCard';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -730,242 +731,27 @@ const SiteSettings = () => {
 };
 
 const SecuritySettings = () => {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
-
-  const [resetEmailLoading, setResetEmailLoading] = useState(false);
-  const [resetEmailNotice, setResetEmailNotice] = useState(null);
-
-  const handlePasswordUpdate = async (e) => {
-    e.preventDefault();
-    setMessage(null);
-
-    if (newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'New password must be at least 6 characters long.' });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match. Please re-enter.' });
-      return;
-    }
-
-    const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
-    if (!token) {
-      setMessage({ type: 'error', text: 'Session expired. Please log in again.' });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch('/api/v1/admin/security/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          current_password: currentPassword,
-          new_password: newPassword
-        })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setMessage({ type: 'success', text: 'Admin password successfully updated in live database.' });
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        setMessage({ type: 'error', text: data.detail || 'Failed to update admin password.' });
-      }
-    } catch {
-      setMessage({ type: 'error', text: 'Network error connecting to security service.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRequestResetEmail = async () => {
-    setResetEmailNotice(null);
-    setResetEmailLoading(true);
-
-    const token = typeof window !== 'undefined' ? localStorage.getItem('penta_access_token') : null;
-    if (!token) return;
-
-    try {
-      const res = await fetch('/api/v1/admin/security/request-reset-email', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setResetEmailNotice({
-          type: 'success',
-          text: data.message || 'Reset email dispatched to admin@pentabrid.com.',
-          dev_url: data.dev_reset_url
-        });
-      } else {
-        setResetEmailNotice({ type: 'error', text: data.detail || 'Could not send reset email.' });
-      }
-    } catch {
-      setResetEmailNotice({ type: 'error', text: 'Failed to request reset email.' });
-    } finally {
-      setResetEmailLoading(false);
-    }
-  };
-
   return (
-    <div className="max-w-4xl mx-auto p-6 md:p-8 space-y-8 font-sans">
-      <div>
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2.5">
-          <Shield className="w-6 h-6 text-emerald-400" /> Security & Master Authentication
-        </h2>
-        <p className="text-slate-400 text-xs font-mono mt-1">
-          Cryptographic access control, root credentials, and email recovery loops.
-        </p>
-      </div>
-
-      {/* Admin Identity Card */}
-      <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <span className="text-xs font-mono uppercase text-slate-500 font-semibold block">Exclusive Administrator Account</span>
-            <div className="text-lg font-bold text-white font-mono mt-0.5">admin@pentabrid.com</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-bold">
-              ● Live Protected
-            </span>
-          </div>
+    <div className="p-4 md:p-8 space-y-6 font-sans max-w-5xl mx-auto">
+      <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2.5 font-mono">
+            <Shield className="w-5 h-5 text-emerald-400" /> Security & Master Authentication
+          </h2>
+          <p className="text-slate-400 text-xs font-mono mt-1">
+            Access control, brute-force rate limiting, and password management.
+          </p>
         </div>
+        <a
+          href="/account/security"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-mono transition border border-slate-700 shadow-sm"
+        >
+          <ExternalLink className="w-3.5 h-3.5" /> Standalone Security Page &rarr;
+        </a>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Direct Password Change */}
-        <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-5 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wide font-mono">Update Password Directly</h3>
-              <p className="text-slate-400 text-xs mt-1">
-                Verify your current credentials to update the password hash in the database.
-              </p>
-            </div>
-
-            {message && (
-              <div className={`p-3.5 rounded-xl border text-xs font-mono flex items-center gap-2 ${
-                message.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                  : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-              }`}>
-                {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
-                <span>{message.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handlePasswordUpdate} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Current Password</label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={e => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                  required
-                  className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-2.5 text-slate-200 text-xs focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">New Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  required
-                  className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-2.5 text-slate-200 text-xs focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Confirm New Password</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter new password"
-                  required
-                  className="w-full bg-[#05070a] border border-slate-800 rounded-xl p-2.5 text-slate-200 text-xs focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold font-mono text-xs uppercase tracking-wide rounded-xl transition shadow-sm mt-2"
-              >
-                {loading ? 'Updating Credentials...' : 'Save New Password'}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Email Recovery Challenge */}
-        <div className="bg-[#090d16] border border-slate-800 rounded-2xl p-6 space-y-5 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wide font-mono">Email Recovery Loop</h3>
-              <p className="text-slate-400 text-xs mt-1">
-                Dispatch an encrypted, single-use 15-minute token link to <strong className="text-slate-200">admin@pentabrid.com</strong>.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs font-mono text-slate-400">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                <Check className="w-4 h-4" /> Single-Use Token Hash
-              </div>
-              <p className="text-[11px] text-slate-500">
-                Tokens are hashed with SHA-256 and expire automatically in 15 minutes.
-              </p>
-            </div>
-
-            {resetEmailNotice && (
-              <div className={`p-3.5 rounded-xl border text-xs font-mono space-y-2 ${
-                resetEmailNotice.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                  : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-              }`}>
-                <div className="flex items-center gap-2">
-                  {resetEmailNotice.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
-                  <span>{resetEmailNotice.text}</span>
-                </div>
-                {resetEmailNotice.dev_url && (
-                  <div className="pt-2 border-t border-emerald-500/20">
-                    <span className="text-[10px] text-emerald-400 uppercase font-bold block mb-1">Direct Reset URL:</span>
-                    <a
-                      href={resetEmailNotice.dev_url}
-                      className="text-[11px] underline break-all text-cyan-400 hover:text-cyan-300 block"
-                    >
-                      {resetEmailNotice.dev_url} &rarr;
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={handleRequestResetEmail}
-            disabled={resetEmailLoading}
-            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 disabled:opacity-50 text-white font-bold font-mono text-xs uppercase tracking-wide rounded-xl transition flex items-center justify-center gap-2"
-          >
-            <Mail className="w-4 h-4 text-emerald-400" />
-            <span>{resetEmailLoading ? 'Dispatching...' : 'Send Reset Link to admin@pentabrid.com'}</span>
-          </button>
-        </div>
-      </div>
+      <SecuritySettingsCard />
     </div>
   );
 };

@@ -1,9 +1,10 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.core.security import get_password_hash, verify_password, create_access_token, decode_access_token
+from backend.app.core.rate_limiter import RateLimiterService
 import backend.app.models as m
 import backend.app.schemas.user as s
 
@@ -45,19 +46,36 @@ def register(data: s.UserCreate, db: Session = Depends(get_db)):
     return {'access_token': token, 'token_type': 'bearer', 'user': user}
 
 @router.post('/login', response_model=s.TokenResponse)
-def login(data: s.UserLogin, db: Session = Depends(get_db)):
-    user = db.query(m.User).filter(m.User.email == data.email).first()
+def login(data: s.UserLogin, request: Request, db: Session = Depends(get_db)):
+    client_ip = RateLimiterService.get_client_ip(request)
+    email = data.email.strip().lower()
+
+    # Enforce brute force rate limit check
+    RateLimiterService.check_login_rate_limit(db, client_ip, email)
+
+    user = db.query(m.User).filter(m.User.email == email).first()
     if not user or not verify_password(data.password, user.hashed_password):
+        RateLimiterService.record_login_attempt(db, client_ip, email, is_successful=False)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid email or password')
     
+    # Successful login: reset failed attempts counter
+    RateLimiterService.record_login_attempt(db, client_ip, email, is_successful=True)
     token = create_access_token(subject=user.id)
     return {'access_token': token, 'token_type': 'bearer', 'user': user}
 
 @router.post('/token')
-def login_for_swagger(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(m.User).filter(m.User.email == form_data.username).first()
+def login_for_swagger(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    client_ip = RateLimiterService.get_client_ip(request)
+    email = form_data.username.strip().lower()
+
+    RateLimiterService.check_login_rate_limit(db, client_ip, email)
+
+    user = db.query(m.User).filter(m.User.email == email).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
+        RateLimiterService.record_login_attempt(db, client_ip, email, is_successful=False)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid email or password')
+    
+    RateLimiterService.record_login_attempt(db, client_ip, email, is_successful=True)
     token = create_access_token(subject=user.id)
     return {'access_token': token, 'token_type': 'bearer'}
 
@@ -66,7 +84,7 @@ def get_me(current_user: m.User = Depends(get_current_user)):
     return current_user
 
 @router.post('/forgot-password')
-def forgot_password(data: s.ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(data: s.ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
     import secrets
     import hashlib
     from datetime import datetime, timedelta, timezone
@@ -74,6 +92,12 @@ def forgot_password(data: s.ForgotPasswordRequest, db: Session = Depends(get_db)
     from backend.app.services.email_service import EmailService
 
     email = data.email.strip().lower()
+    client_ip = RateLimiterService.get_client_ip(request)
+
+    # Throttle reset password requests to protect email quota
+    RateLimiterService.check_forgot_password_rate_limit(db, client_ip, email)
+    RateLimiterService.record_forgot_password_attempt(db, client_ip, email)
+
     user = db.query(m.User).filter(m.User.email == email).first()
 
     raw_token = None
@@ -96,7 +120,8 @@ def forgot_password(data: s.ForgotPasswordRequest, db: Session = Depends(get_db)
             user_id=user.id,
             token_hash=token_hash,
             expires_at=expires_at,
-            created_at=now
+            created_at=now,
+            ip_address=client_ip
         )
         db.add(reset_record)
         db.commit()

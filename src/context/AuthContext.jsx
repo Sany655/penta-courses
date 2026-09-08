@@ -120,7 +120,7 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        return { success: false, message: data.detail || data.message || 'Authentication failed.' };
+        return { success: false, status: response.status, message: data.detail || data.message || 'Authentication failed.' };
       }
 
       localStorage.setItem('penta_access_token', data.access_token);
