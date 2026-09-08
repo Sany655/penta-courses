@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('lesson-builder');
   const [courses, setCourses] = useState([]);
-  const { isAdmin, inquiries } = useAuth();
+  const { user, isAdmin, inquiries } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -29,14 +29,14 @@ const AdminDashboard = () => {
 
   const newInquiriesCount = (inquiries || []).filter(i => i.status === 'NEW').length;
 
-  // If not admin, redirect to auth
+  // If not admin@pentabrid.com, redirect to auth
   React.useEffect(() => {
-    if (!isAdmin) {
+    if (!isAdmin || (user?.email || '').toLowerCase() !== 'admin@pentabrid.com') {
       router.push('/auth');
     }
-  }, [isAdmin, router]);
+  }, [isAdmin, user, router]);
 
-  if (!isAdmin) return null;
+  if (!isAdmin || (user?.email || '').toLowerCase() !== 'admin@pentabrid.com') return null;
 
   return (
     <div className="min-h-screen bg-[#05070a] pt-16 flex font-sans transition-colors">

@@ -99,7 +99,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('penta_access_token');
     const userRole = (user?.role || '').toUpperCase();
-    if (!token || !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) return;
+    const userEmail = (user?.email || '').toLowerCase();
+    if (!token || !['ADMIN', 'SUPER_ADMIN'].includes(userRole) || userEmail !== 'admin@pentabrid.com') return;
     const headers = { Authorization: `Bearer ${token}` };
     Promise.all([
       fetch('/api/v1/admin/inquiries', { headers }).then(response => response.ok ? response.json() : []),
@@ -108,7 +109,7 @@ export const AuthProvider = ({ children }) => {
       setInquiries(serverInquiries);
       setTransactions(serverTransactions);
     });
-  }, [user?.role]);
+  }, [user?.role, user?.email]);
 
   const authenticate = async (endpoint, payload) => {
     try {
@@ -365,10 +366,10 @@ export const AuthProvider = ({ children }) => {
       unlockNextModule,
       bypassModuleWithPayment,
       recordQuizSuccess,
-      isAdmin: ['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()),
+      isAdmin: ['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()) && (user?.email || '').toLowerCase() === 'admin@pentabrid.com',
       isUser: Boolean(user),
       isGuest: !user,
-      isStudent: Boolean(user) && !['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()),
+      isStudent: Boolean(user) && !(['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()) && (user?.email || '').toLowerCase() === 'admin@pentabrid.com'),
       isStaff: ['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()),
       role: user ? (['ADMIN', 'SUPER_ADMIN'].includes((user?.role || '').toUpperCase()) ? ROLES.ADMIN : ROLES.USER) : ROLES.GUEST,
     }}>

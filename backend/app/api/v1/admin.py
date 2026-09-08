@@ -12,10 +12,12 @@ router = APIRouter(prefix='/admin', tags=['Admin Control Panel & Workbench'])
 
 def require_admin(current_user: m.User = Depends(get_current_user)):
     role = (current_user.role or '').upper()
-    if role not in {m.UserRole.ADMIN, 'ADMIN', 'SUPER_ADMIN'}:
+    email = (current_user.email or '').strip().lower()
+    allowed_admin_emails = {'admin@pentabrid.com'}
+    if role not in {m.UserRole.ADMIN, 'ADMIN', 'SUPER_ADMIN'} or email not in allowed_admin_emails:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required"
+            detail="Admin privileges restricted exclusively to admin@pentabrid.com"
         )
     return current_user
 
