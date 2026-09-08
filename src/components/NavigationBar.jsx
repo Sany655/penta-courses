@@ -20,7 +20,7 @@ export default function NavigationBar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef(null);
   
-  const isWorkspace = pathname && pathname.startsWith('/learn');
+  const isWorkspace = pathname && (pathname === '/learn' || pathname.startsWith('/learn/'));
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -58,7 +58,6 @@ export default function NavigationBar() {
         <Link href="/domains" className="nav-link">Domains</Link>
         <Link href="/courses" className="nav-link">Courses</Link>
         <Link href="/how-it-works" className="nav-link">How It Works</Link>
-        <Link href="/pricing" className="nav-link">Pricing</Link>
         <a 
           href="https://pentabrid.com/" 
           target="_blank" 
@@ -233,7 +232,6 @@ export default function NavigationBar() {
           <Link href="/domains" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-emerald-500 dark:hover:text-emerald-400 transition">Domains</Link>
           <Link href="/courses" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-emerald-500 dark:hover:text-emerald-400 transition">Courses</Link>
           <Link href="/how-it-works" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-emerald-500 dark:hover:text-emerald-400 transition">How It Works</Link>
-          <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-emerald-500 dark:hover:text-emerald-400 transition">Pricing</Link>
           <a href="https://pentabrid.com/" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-4 py-3 rounded-xl text-sm font-mono font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-cyan-500 dark:hover:text-cyan-400 transition">
             <span>pentabrid.com</span>
             <ExternalLink className="w-3.5 h-3.5 text-cyan-500 dark:text-cyan-400" />

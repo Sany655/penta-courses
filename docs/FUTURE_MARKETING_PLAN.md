@@ -89,3 +89,30 @@ Traditional eLearning landing pages fail because they treat high-stakes engineer
 3. **Phase 3 (Telemetry & Tracking)**:
    - Fire custom telemetry events on probe interaction: `diagnostic_probe_started`, `diagnostic_probe_completed`, `bypass_calculator_adjusted`.
    - Measure conversion rate from landing micro-demo to paid Founder Pass checkout.
+
+---
+
+## 4. Archived Pricing Architecture & Monetization Strategy (Currently Hidden)
+
+To keep the platform clean during curriculum population and initial administrative setup, the `/pricing` page and direct pricing links have been temporarily hidden. When ready to launch commercial monetization, the following architecture is prepared for immediate reactivation:
+
+### 4.1 Tiered Monetization Structure
+
+| Tier | Price (USD) | Price (BDT - bKash) | Target Audience | Key Entitlements |
+| :--- | :--- | :--- | :--- | :--- |
+| **Tier 1: Free Diagnostic** | **$0** | **0 BDT** | All exploratory visitors | • Full access to Knowledge Graph & Conceptual Topologies<br>• 3-Minute Diagnostic Probes<br>• 5-D Competence Radar Visualization<br>• Prerequisite gap identification |
+| **Tier 2: Founder Track Pass** | **$29** *(one-time)* | **3,300 BDT** | Individual professionals & ambitious students | • Lifetime access to all current & future courses in selected track<br>• Unlimited Fast-Track Bypass Exam attempts<br>• Interactive sandbox labs & Socratic AI tutor<br>• Tamper-proof SHA-256 Ledger Certificate with public URL<br>• Limited to first 100 learners (cohort scarcity) |
+| **Tier 3: Institutional / Engineering Cluster** | **$199** *(per seat / yr)* | **22,500 BDT** | Teams, bootcamps & enterprise clusters | • Everything in Founder Pass<br>• Multi-seat administrative telemetry dashboard<br>• Team diagnostic benchmarks & cohort progress heatmaps<br>• Custom track sequencing & priority API access |
+
+### 4.2 Dual Payment Gateway Architecture
+1. **Stripe (Global / International)**:
+   - Checkout Sessions powered by `STRIPE_SECRET_KEY` and verified via `/api/v1/commerce/stripe/webhook`.
+2. **bKash (Bangladesh Local / Mobile Banking)**:
+   - Zero-fee direct mobile banking flow: student sends BDT payment with email reference, submits TrxID and Sender Phone Number via the modal.
+   - Admin approves or rejects transaction with 1 click in AI Admin Studio (`/admin` Commerce Tab).
+
+### 4.3 Checklist to Reactivate Pricing Page
+- [ ] In `src/components/NavigationBar.jsx`: Re-add `<Link href="/pricing" ...>Pricing</Link>` to desktop & mobile drawers.
+- [ ] In `src/app/layout.jsx`: Re-add `<a href="/pricing" ...>Pricing</a>` to the footer.
+- [ ] In `src/app/pricing/page.jsx`: Remove the redirect (`router.replace('/')`) and restore the 3-tier conversion cards.
+- [ ] In `src/app/page.jsx`: Add sticky "Founder Pass — $29" banner or embed Architecture 1 diagnostic probe linked to checkout.

@@ -26,7 +26,6 @@ export default function RootLayout({ children }) {
                 <span>An Official Education Platform of <a href="https://pentabrid.com/" target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">Pentabrid</a></span>
               </div>
               <div className="flex items-center space-x-6 font-medium">
-                <a href="/pricing" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Pricing</a>
                 <a href="/contact" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Contact</a>
                 <a href="https://pentabrid.com/" target="_blank" rel="noreferrer" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition flex items-center gap-1">
                   <span>pentabrid.com</span>
